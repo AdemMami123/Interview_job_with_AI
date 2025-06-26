@@ -4,6 +4,7 @@ import { _success } from "zod/v4/core";
 //check this may cause error
 import { db,auth } from "@/firebase/admin"
 import { cookies } from "next/headers";
+import { id } from "zod/v4/locales";
 export async function signUp(params:SignUpParams){
     const {uid,name,email}= params;
     try {
@@ -75,5 +76,30 @@ export async function signIn(params:SignInParams){
             message: "An error occurred during sign in. Please try again later.",
         };
     }
+}
+export async function getCurrentUser(){
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    if (!sessionCookie) {
+        return null;
+    }
+    try {
+        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+        const userRecord = await db.collection("users").doc(decodedClaims.uid).get(); 
+        if (!userRecord.exists) {
+            return null;
+        }
+        return{
+            ...userRecord.data(),
+            id: userRecord.id,
+        }as User;
+    } catch (error) {
+        console.error("Error verifying session cookie:", error);
+        return null;
+    }
+}
+export async function isAuthenticated(){
+    const user=await getCurrentUser();
+    return !!user;
 }
 
