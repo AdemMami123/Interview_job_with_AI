@@ -503,7 +503,8 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             )}
             
             <div className='text-xs text-gray-500 text-center'>
-                Speak clearly and wait for response • Orange dot = mic active • Blue dot = speech detected
+                Speak clearly and take your time • Orange dot = mic active • Blue dot = speech detected<br/>
+                You can speak for up to 30 seconds • Natural pauses are OK
             </div>
         </div>
     )}

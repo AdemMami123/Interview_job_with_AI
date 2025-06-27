@@ -66,28 +66,31 @@ export class FreeVoiceService {
             // Set a longer timeout for speech detection
             timeoutId = setTimeout(() => {
                 if (this.isListening && !hasResult) {
-                    console.log('⏰ Speech recognition timeout after 15 seconds');
+                    console.log('⏰ Speech recognition timeout after 30 seconds');
                     this.recognition.stop();
                     this.isListening = false;
                     reject(new Error('Speech recognition timeout - please try again'));
                 }
-            }, 15000); // Increased to 15 seconds
+            }, 60000); // Increased to 30 seconds for longer responses
 
             this.recognition.onresult = (event: any) => {
                 console.log('🎤 OnResult triggered with', event.results.length, 'results');
                 
                 let interimTranscript = '';
+                let latestInterimText = '';
                 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
                         finalTranscript += transcript;
-                        console.log('🎤 Final transcript:', finalTranscript);
+                        console.log('🎤 Final transcript part:', transcript);
+                        console.log('🎤 Complete final transcript so far:', finalTranscript);
                         callbacks?.onTranscript?.(finalTranscript, true);
                     } else {
                         interimTranscript += transcript;
+                        latestInterimText = transcript; // Keep track of the latest interim result
                         console.log('🎤 Interim transcript:', interimTranscript);
-                        callbacks?.onTranscript?.(interimTranscript, false);
+                        callbacks?.onTranscript?.(finalTranscript + interimTranscript, false);
                     }
                 }
                 
@@ -99,30 +102,41 @@ export class FreeVoiceService {
                     this.isListening = false;
                     this.networkIssueCount = 0;
                     this.recognition.stop();
+                    console.log('🎤 Using final transcript:', finalTranscript.trim());
                     resolve(finalTranscript.trim());
                     return;
                 }
                 
                 // If we have interim results, set up silence detection
-                if (interimTranscript.trim().length > 0) {
-                    console.log('🎤 Detected speech, setting up silence timer...');
+                if (interimTranscript.trim().length > 0 || latestInterimText.trim().length > 0) {
+                    console.log('🎤 Detected speech, resetting silence timer...');
                     clearTimeout(silenceTimer);
                     
-                    // Wait for silence after detecting speech
+                    // Dynamic silence timeout based on speech length
+                    const totalSpeech = (finalTranscript + interimTranscript).trim();
+                    const speechLength = totalSpeech.length;
+                    let silenceTimeout = 2500; // Base 2.5 seconds
+                    
+                    // Add more time for longer responses
+                    if (speechLength > 50) silenceTimeout = 3500; // 3.5 seconds for medium responses
+                    if (speechLength > 100) silenceTimeout = 4500; // 4.5 seconds for long responses
+                    if (speechLength > 200) silenceTimeout = 5500; // 5.5 seconds for very long responses
+                    
+                    console.log(`🎤 Setting silence timeout to ${silenceTimeout}ms for speech length: ${speechLength}`);
+                    
+                    // Wait for silence after detecting speech (longer pause for longer responses)
                     silenceTimer = setTimeout(() => {
-                        if (finalTranscript.trim().length > 0 || interimTranscript.trim().length > 0) {
-                            const result = finalTranscript.trim() || interimTranscript.trim();
-                            if (!hasResult && result.length > 0) {
-                                hasResult = true;
-                                clearTimeout(timeoutId);
-                                this.isListening = false;
-                                this.networkIssueCount = 0;
-                                this.recognition.stop();
-                                console.log('🎤 Using result after silence:', result);
-                                resolve(result);
-                            }
+                        const result = (finalTranscript + interimTranscript).trim();
+                        if (!hasResult && result.length > 0) {
+                            hasResult = true;
+                            clearTimeout(timeoutId);
+                            this.isListening = false;
+                            this.networkIssueCount = 0;
+                            this.recognition.stop();
+                            console.log('🎤 Using result after silence:', result);
+                            resolve(result);
                         }
-                    }, 1500); // Wait 1.5 seconds of silence
+                    }, silenceTimeout);
                 }
             };
 
