@@ -48,6 +48,20 @@ interface User {
   name: string;
   email: string;
   id: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface UserStats {
+  totalInterviews: number;
+  averageScore: number;
+  totalHours: number;
+  recentInterviews?: Interview[];
+}
+
+interface UpdateProfileParams {
+  name: string;
+  email: string;
 }
 
 interface InterviewCardProps {
