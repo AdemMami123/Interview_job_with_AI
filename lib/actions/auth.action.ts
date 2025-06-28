@@ -102,4 +102,22 @@ export async function isAuthenticated(){
     const user=await getCurrentUser();
     return !!user;
 }
+export async function logout() {
+    try {
+        const cookieStore = await cookies();
+        // Clear the session cookie
+        cookieStore.delete('session');
+        
+        return {
+            _success: true,
+            message: "Logged out successfully.",
+        };
+    } catch (error) {
+        console.error("Error during logout:", error);
+        return {
+            _success: false,
+            message: "An error occurred during logout.",
+        };
+    }
+}
 

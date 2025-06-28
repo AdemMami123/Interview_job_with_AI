@@ -310,11 +310,15 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             const endTime = new Date();
             const durationMinutes = Math.round((endTime.getTime() - interviewStartTime.getTime()) / (1000 * 60));
 
+            // Extract technologies and role info from conversation
+            const conversationText = messages.map(msg => msg.content).join(' ').toLowerCase();
+            
+            // Default data that will be enhanced by AI analysis
             const interviewData = {
                 userId: userId,
-                role: 'Software Developer', // Default role, can be made dynamic
-                level: 'Mid-level', // Default level, can be made dynamic
-                techstack: ['React', 'Node.js', 'TypeScript'], // Default stack, can be made dynamic
+                role: 'Software Developer', // AI will generate a better contextual name
+                level: 'Mid-level',
+                techstack: ['General'], // AI will extract actual technologies discussed
                 transcript: messages,
                 duration: durationMinutes,
                 interviewType: 'Technical'
@@ -330,6 +334,9 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
 
             if (result.success) {
                 console.log('✅ Interview saved successfully!', result);
+                console.log(`📝 AI-generated name: ${result.interviewName}`);
+                console.log(`🔧 Extracted technologies: ${result.extractedTechStack?.join(', ')}`);
+                console.log(`⭐ Score: ${result.score}/100`);
                 setInterviewSaved(true);
             } else {
                 console.error('❌ Failed to save interview:', result.error);
@@ -589,14 +596,18 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
     )}
     <div className='w-full flex justify-center gap-4'>
         {callStatus !== CallStatus.ACTIVE ? (
-            <button className='relative btn-call' onClick={handleCall}>
-                <span className={cn(
-                    'absolute animate-ping rounded-full opacity-75',
-                    callStatus !== CallStatus.CONNECTING && 'hidden'
-                )}>
-                    {isCallInactiveOrFinished ? 'Call' : '...'}
-                </span>
-            </button>
+            <button className='relative btn-call mt-6 px-6 py-3 text-lg' onClick={handleCall}>
+    <span className={cn(
+        'absolute inset-0 animate-ping rounded-full opacity-75 bg-current',
+        callStatus !== CallStatus.CONNECTING && 'hidden'
+    )}></span>
+    <span className={cn(
+        'relative z-10',
+        callStatus === CallStatus.CONNECTING && 'opacity-50'
+    )}>
+        {callStatus === CallStatus.CONNECTING ? 'Connecting...' : 'Start Call'}
+    </span>
+</button>
         ) : (
             <>
                 <button className='btn-disconnect' onClick={handleDisconnect}>End Call</button>

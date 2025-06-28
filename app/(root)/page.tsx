@@ -10,7 +10,7 @@ const practiceTemplates: Interview[] = [
   {
     id: "template-frontend",
     userId: "",
-    role: "Frontend Developer",
+    role: "Frontend Developer Practice",
     type: "Technical",
     level: "Mid-level",
     techstack: ["React", "TypeScript", "Next.js", "Tailwind CSS"],
@@ -26,7 +26,7 @@ const practiceTemplates: Interview[] = [
   {
     id: "template-fullstack",
     userId: "",
-    role: "Full Stack Developer",
+    role: "Full Stack Developer Practice",
     type: "Technical",
     level: "Senior",
     techstack: ["Node.js", "Express", "MongoDB", "React"],
@@ -42,7 +42,7 @@ const practiceTemplates: Interview[] = [
   {
     id: "template-backend",
     userId: "",
-    role: "Backend Developer",
+    role: "Backend Developer Practice",
     type: "Technical",
     level: "Mid-level",
     techstack: ["Node.js", "Express", "PostgreSQL", "Redis"],
@@ -168,43 +168,45 @@ const page = () => {
 
   return (
     <>
-      {/* User Welcome Section */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Welcome, {currentUserName}!
-              </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {isAuthenticated
-                  ? "You're signed in and your progress is saved to your account."
-                  : "You're browsing as a guest. Sign in to save your interview history across devices."}
-              </p>
-            </div>
-            {!isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNameChange}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Edit Name
-              </Button>
-            )}
-          </div>
-          {!isAuthenticated && (
-            <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/sign-in">Sign In</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/sign-up">Sign Up</Link>
-              </Button>
-            </div>
-          )}
-        </div>
+     {/* User Welcome Section */}
+<div className="mb-6 p-4 bg-gray-900 rounded-2xl border border-gray-700 shadow-sm">
+  <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
+    <div className="flex items-start gap-4">
+      <div className="space-y-1">
+        <h3 className="text-xl font-semibold text-white">
+          Welcome, {currentUserName}!
+        </h3>
+        <p className="text-sm text-gray-300 leading-relaxed max-w-md">
+          {isAuthenticated
+            ? "You're signed in and your progress is saved to your account."
+            : "You're browsing as a guest. Sign in to save your interview history across devices."}
+        </p>
       </div>
+      {!isAuthenticated && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleNameChange}
+          className="text-blue-400 hover:text-blue-300"
+        >
+          Edit Name
+        </Button>
+      )}
+    </div>
+
+    {!isAuthenticated && (
+      <div className="flex gap-2">
+        <Button asChild variant="outline" size="sm" className="border-gray-600 text-white hover:bg-gray-800">
+          <Link href="/sign-in">Sign In</Link>
+        </Button>
+        <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-500 text-white">
+          <Link href="/sign-up">Sign Up</Link>
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
 
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
