@@ -23,6 +23,12 @@ interface Interview {
   userId: string;
   type: string;
   finalized: boolean;
+  completed?: boolean;
+  completedAt?: string;
+  score?: number;
+  transcript?: { role: string; content: string }[];
+  duration?: number; // in minutes
+  status?: 'pending' | 'completed' | 'in-progress';
 }
 
 interface CreateFeedbackParams {

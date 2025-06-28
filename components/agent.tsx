@@ -35,6 +35,11 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
     const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
     const [isConversational, setIsConversational] = useState(true); // New conversational mode
     const [conversationCount, setConversationCount] = useState(0);
+    
+    // Interview tracking
+    const [interviewStartTime, setInterviewStartTime] = useState<Date | null>(null);
+    const [isSavingInterview, setIsSavingInterview] = useState(false);
+    const [interviewSaved, setInterviewSaved] = useState(false);
 
     // Initialize voice service
     useEffect(() => {
@@ -227,7 +232,9 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                 const randomEnding = endingResponses[Math.floor(Math.random() * endingResponses.length)];
                 await speak(randomEnding);
                 
-                setTimeout(() => {
+                // Save interview before finishing
+                setTimeout(async () => {
+                    await saveInterview();
                     setCallStatus(CallStatus.FINISHED);
                 }, 4000);
                 return;
@@ -289,6 +296,52 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         }
     };
 
+    // Save interview to Firebase
+    const saveInterview = async () => {
+        if (!userId || !interviewStartTime || isSavingInterview || interviewSaved) {
+            console.log('❌ Cannot save interview - missing data or already saving/saved');
+            return;
+        }
+
+        try {
+            setIsSavingInterview(true);
+            console.log('💾 Saving interview to Firebase...');
+
+            const endTime = new Date();
+            const durationMinutes = Math.round((endTime.getTime() - interviewStartTime.getTime()) / (1000 * 60));
+
+            const interviewData = {
+                userId: userId,
+                role: 'Software Developer', // Default role, can be made dynamic
+                level: 'Mid-level', // Default level, can be made dynamic
+                techstack: ['React', 'Node.js', 'TypeScript'], // Default stack, can be made dynamic
+                transcript: messages,
+                duration: durationMinutes,
+                interviewType: 'Technical'
+            };
+
+            const response = await fetch('/api/interview/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(interviewData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Interview saved successfully!', result);
+                setInterviewSaved(true);
+            } else {
+                console.error('❌ Failed to save interview:', result.error);
+            }
+
+        } catch (error) {
+            console.error('❌ Error saving interview:', error);
+        } finally {
+            setIsSavingInterview(false);
+        }
+    };
+
     useEffect(() => {
         if(callStatus === CallStatus.FINISHED) {
             if (voiceService) {
@@ -329,9 +382,12 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         setCurrentQuestionIndex(0);
         setMessages([]);
         setConversationCount(0);
+        setInterviewSaved(false);
+        setIsSavingInterview(false);
         
         try {
             setCallStatus(CallStatus.ACTIVE);
+            setInterviewStartTime(new Date()); // Track interview start time
             
             // Start with a natural greeting instead of following a script
             const greeting = `Hello ${userName}! It's great to meet you. I'm excited to learn more about you and your experience. To get started, could you tell me a bit about yourself and what you're passionate about in software development?`;
@@ -343,7 +399,12 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         }
     };
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
+        // Save interview before disconnecting if there's conversation content
+        if (messages.length > 2 && !interviewSaved) {
+            await saveInterview();
+        }
+        
         setCallStatus(CallStatus.FINISHED);
         setIsListening(false);
         setIsThinking(false);
@@ -597,6 +658,23 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             </>
         )}
     </div>
+    {isSavingInterview && (
+        <div className='w-full flex justify-center my-4'>
+            <div className='flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 rounded-full'>
+                <div className='w-3 h-3 bg-green-500 rounded-full animate-spin'></div>
+                <span className='text-sm text-green-800 dark:text-green-200'>💾 Saving your interview...</span>
+            </div>
+        </div>
+    )}
+
+    {interviewSaved && !isSavingInterview && (
+        <div className='w-full flex justify-center my-4'>
+            <div className='flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 rounded-full'>
+                <div className='w-3 h-3 bg-green-500 rounded-full'></div>
+                <span className='text-sm text-green-800 dark:text-green-200'>✅ Interview saved successfully!</span>
+            </div>
+        </div>
+    )}
     </>
     
   )

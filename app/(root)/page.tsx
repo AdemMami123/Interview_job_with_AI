@@ -1,15 +1,214 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { dummyInterviews } from "@/constants";
 import InterviewCard from "@/components/InterviewCard";
+
+// Practice interview templates
+const practiceTemplates: Interview[] = [
+  {
+    id: "template-frontend",
+    userId: "",
+    role: "Frontend Developer",
+    type: "Technical",
+    level: "Mid-level",
+    techstack: ["React", "TypeScript", "Next.js", "Tailwind CSS"],
+    questions: [
+      "Tell me about your React experience",
+      "How do you handle state management?",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "template-fullstack",
+    userId: "",
+    role: "Full Stack Developer",
+    type: "Technical",
+    level: "Senior",
+    techstack: ["Node.js", "Express", "MongoDB", "React"],
+    questions: [
+      "Describe your full-stack architecture",
+      "How do you handle database optimization?",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "template-backend",
+    userId: "",
+    role: "Backend Developer",
+    type: "Technical",
+    level: "Mid-level",
+    techstack: ["Node.js", "Express", "PostgreSQL", "Redis"],
+    questions: [
+      "Explain RESTful API design",
+      "How do you handle caching strategies?",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 const page = () => {
+  const [userInterviews, setUserInterviews] = useState<Interview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Get current user ID (you may need to implement user authentication)
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        // First try to get the authenticated user
+        const response = await fetch("/api/auth/current-user");
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.success && userData.user) {
+            setCurrentUserId(userData.user.id);
+            setCurrentUserName(userData.user.name || "User");
+            setIsAuthenticated(true);
+            return;
+          }
+        }
+
+        // If no authenticated user, fall back to localStorage or create new user
+        let userId = localStorage.getItem("userId");
+        let userName = localStorage.getItem("userName") || "Anonymous User";
+
+        if (!userId) {
+          // Generate a simple user ID if none exists
+          userId = `user_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
+          localStorage.setItem("userId", userId);
+        }
+
+        setCurrentUserId(userId);
+        setCurrentUserName(userName);
+        setIsAuthenticated(false);
+      } catch (error) {
+        console.error("Error getting user:", error);
+        // Fall back to guest user
+        const guestId = `guest_${Date.now()}`;
+        setCurrentUserId(guestId);
+        setCurrentUserName("Anonymous User");
+        setIsAuthenticated(false);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  // Fetch user's completed interviews
+  useEffect(() => {
+    const fetchUserInterviews = async () => {
+      if (!currentUserId) return;
+
+      try {
+        setLoading(true);
+
+        // Fetch user's own completed interviews
+        const userResponse = await fetch(
+          `/api/interview/list?userId=${currentUserId}&limit=20`
+        );
+        const userData = await userResponse.json();
+
+        if (userData.success) {
+          // Only show completed interviews in the "Your Completed Interviews" section
+          const completedInterviews = userData.interviews.filter(
+            (interview: Interview) => interview.completed
+          );
+          setUserInterviews(completedInterviews);
+        } else {
+          console.error("Failed to fetch interviews:", userData.error);
+          setUserInterviews([]);
+        }
+      } catch (error) {
+        console.error("Error fetching interviews:", error);
+        setUserInterviews([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInterviews();
+  }, [currentUserId]);
+
+  // Function to change user name (for non-authenticated users)
+  const handleNameChange = () => {
+    if (!isAuthenticated) {
+      const newName = prompt("Enter your name:", currentUserName || "");
+      if (newName && newName.trim()) {
+        const trimmedName = newName.trim();
+        setCurrentUserName(trimmedName);
+        localStorage.setItem("userName", trimmedName);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-96">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce"></div>
+          <span>Loading interviews...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
+      {/* User Welcome Section */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Welcome, {currentUserName}!
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {isAuthenticated
+                  ? "You're signed in and your progress is saved to your account."
+                  : "You're browsing as a guest. Sign in to save your interview history across devices."}
+              </p>
+            </div>
+            {!isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNameChange}
+                className="text-blue-600 hover:text-blue-800"
+              >
+                Edit Name
+              </Button>
+            )}
+          </div>
+          {!isAuthenticated && (
+            <div className="flex gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/sign-in">Sign In</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/sign-up">Sign Up</Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <section className="card-cta">
         <div className="flex flex-col gap-6 max-w-lg">
-          <h2>Get Interview-Ready with AI-Powered Pratice & Feedback</h2>
+          <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>
           <p className="text-lg">
             Practice job interviews with AI, get instant feedback, and ace your
             next interview.
@@ -26,22 +225,38 @@ const page = () => {
           className="max-sm:hidden"
         />
       </section>
-      <section className="felx flex-col gap-6 mt-8">
-        <h2>Interviews</h2>
+
+      <section className="flex flex-col gap-6 mt-8">
+        <h2>
+          {isAuthenticated
+            ? "Your Completed Interviews"
+            : "Your Interview History (Local)"}
+        </h2>
         <div className="interviews-section">
-         {dummyInterviews.map((interview)=> (
-          <InterviewCard {...interview} key={interview.id}/>
-         )
-         )}
+          {userInterviews.length > 0 ? (
+            userInterviews.map((interview) => (
+              <InterviewCard {...interview} key={interview.id} />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-gray-500 py-8">
+              <p className="text-lg">No completed interviews yet</p>
+              <p className="text-sm">
+                {isAuthenticated
+                  ? "Complete an interview to see it here with your score and feedback"
+                  : "Complete an interview to see it here. Sign in to save interviews permanently across devices."}
+              </p>
+            </div>
+          )}
         </div>
       </section>
+
       <section className="flex flex-col gap-6 mt-8">
-        <h2>take an Interview</h2>
+        <h2>Start a New Interview</h2>
         <div className="interviews-section">
-{dummyInterviews.map((interview)=> (
-          <InterviewCard {...interview}key={interview.id}/>
-         )
-         )}        </div>
+          {practiceTemplates.map((template) => (
+            <InterviewCard {...template} key={template.id} />
+          ))}
+        </div>
       </section>
     </>
   );
