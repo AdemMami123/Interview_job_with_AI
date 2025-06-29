@@ -7,6 +7,8 @@ import Image from 'next/image';
 const techIconBaseURL = "https://cdn.jsdelivr.net/gh/devicons/devicon/icons";
 
 const normalizeTechName = (tech: string) => {
+    if (!tech) return '';
+    
     // Clean up the tech name more thoroughly
     const key = tech.toLowerCase()
         .replace(/\.js$/, "")

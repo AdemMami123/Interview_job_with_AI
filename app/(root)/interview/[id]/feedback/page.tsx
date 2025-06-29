@@ -152,6 +152,8 @@ const FeedbackPage = () => {
     
     setRegenerating(true);
     try {
+      console.log('🔄 Starting feedback regeneration for interview:', params.id);
+      
       const response = await fetch('/api/interview/feedback/regenerate', {
         method: 'POST',
         headers: {
@@ -163,20 +165,28 @@ const FeedbackPage = () => {
         }),
       });
 
+      console.log('📥 Regenerate response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📄 Regenerate response data:', data);
+        
         if (data.success) {
+          console.log('✅ Feedback regenerated successfully, reloading page...');
           // Refresh the page to show updated feedback
           window.location.reload();
         } else {
-          alert('Failed to regenerate feedback: ' + data.error);
+          console.error('❌ Regeneration failed:', data.error);
+          alert('Failed to regenerate feedback: ' + (data.error || 'Unknown error'));
         }
       } else {
-        alert('Failed to regenerate feedback');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ HTTP error during regeneration:', response.status, errorData);
+        alert('Failed to regenerate feedback: ' + (errorData.error || `HTTP ${response.status}`));
       }
     } catch (error) {
-      console.error('Error regenerating feedback:', error);
-      alert('An error occurred while regenerating feedback');
+      console.error('❌ Error regenerating feedback:', error);
+      alert('An error occurred while regenerating feedback: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setRegenerating(false);
     }
@@ -212,33 +222,35 @@ const FeedbackPage = () => {
   const formattedDate = dayjs(interview.completedAt).format("MMMM D, YYYY [at] h:mm A");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 px-4 max-sm:px-0">
       {/* Header Section */}
-      <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-700 p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white mb-2">
+      <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-700 p-6 max-sm:p-4 max-sm:rounded-lg">
+        <div className="flex items-start justify-between max-sm:flex-col max-sm:gap-4 mb-4">
+          <div className="flex-1 max-sm:w-full">
+            <h1 className="text-2xl max-sm:text-xl font-bold text-white mb-2">
               {feedback.interviewName || interview.role}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-300">
+            <div className="flex items-center gap-4 max-sm:gap-2 max-sm:flex-wrap text-sm max-sm:text-xs text-gray-300">
               <span>{interview.level} • {interview.type}</span>
-              <span>•</span>
-              <span>Completed on {formattedDate}</span>
-              <span>•</span>
+              <span className="max-sm:hidden">•</span>
+              <span className="max-sm:w-full">Completed on {formattedDate}</span>
+              <span className="max-sm:hidden">•</span>
               <span>{interview.duration} minutes</span>
             </div>
           </div>
-          <Button variant="outline" asChild className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white">
-            <Link href="/">Back to Dashboard</Link>
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleRegenerateFeedback}
-            disabled={regenerating}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white disabled:opacity-50"
-          >
-            {regenerating ? 'Regenerating...' : 'Regenerate Feedback'}
-          </Button>
+          <div className="flex gap-2 max-sm:w-full max-sm:flex-col">
+            <Button variant="outline" asChild className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white max-sm:w-full">
+              <Link href="/">Back to Dashboard</Link>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleRegenerateFeedback}
+              disabled={regenerating}
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white disabled:opacity-50 max-sm:w-full"
+            >
+              {regenerating ? 'Regenerating...' : 'Regenerate Feedback'}
+            </Button>
+          </div>
         </div>
 
         {/* Overall Score */}

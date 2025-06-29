@@ -23,10 +23,10 @@ export async function GET(request: Request) {
             publicSnapshot.forEach((doc) => {
                 const templateData = { id: doc.id, ...doc.data() } as InterviewTemplate;
                 if (!search || 
-                    templateData.name.toLowerCase().includes(search.toLowerCase()) ||
-                    templateData.role.toLowerCase().includes(search.toLowerCase()) ||
-                    templateData.type.some(t => t.toLowerCase().includes(search.toLowerCase())) ||
-                    templateData.techstack.some(tech => tech.toLowerCase().includes(search.toLowerCase()))
+                    (templateData.name && templateData.name.toLowerCase().includes(search.toLowerCase())) ||
+                    (templateData.role && templateData.role.toLowerCase().includes(search.toLowerCase())) ||
+                    (templateData.type && templateData.type.some(t => t && t.toLowerCase().includes(search.toLowerCase()))) ||
+                    (templateData.techstack && templateData.techstack.some(tech => tech && tech.toLowerCase().includes(search.toLowerCase())))
                 ) {
                     templates.push(templateData);
                 }
@@ -47,10 +47,10 @@ export async function GET(request: Request) {
                 // Don't duplicate if already included from public templates
                 if (!templates.find(t => t.id === templateData.id)) {
                     if (!search || 
-                        templateData.name.toLowerCase().includes(search.toLowerCase()) ||
-                        templateData.role.toLowerCase().includes(search.toLowerCase()) ||
-                        templateData.type.some(t => t.toLowerCase().includes(search.toLowerCase())) ||
-                        templateData.techstack.some(tech => tech.toLowerCase().includes(search.toLowerCase()))
+                        (templateData.name && templateData.name.toLowerCase().includes(search.toLowerCase())) ||
+                        (templateData.role && templateData.role.toLowerCase().includes(search.toLowerCase())) ||
+                        (templateData.type && templateData.type.some(t => t && t.toLowerCase().includes(search.toLowerCase()))) ||
+                        (templateData.techstack && templateData.techstack.some(tech => tech && tech.toLowerCase().includes(search.toLowerCase())))
                     ) {
                         templates.push(templateData);
                     }

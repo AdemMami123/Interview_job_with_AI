@@ -71,7 +71,7 @@ export class FreeVoiceService {
                     this.isListening = false;
                     reject(new Error('Speech recognition timeout - please try again'));
                 }
-            }, 60000); // Increased to 30 seconds for longer responses
+            }, 600000); // Increased to 30 seconds for longer responses
 
             this.recognition.onresult = (event: any) => {
                 console.log('🎤 OnResult triggered with', event.results.length, 'results');

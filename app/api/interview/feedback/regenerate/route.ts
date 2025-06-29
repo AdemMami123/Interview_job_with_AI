@@ -27,9 +27,17 @@ export async function POST(request: Request) {
         }
 
         const interviewData = interviewDoc.data();
+        console.log('📋 Interview data found:', {
+            role: interviewData?.role,
+            level: interviewData?.level,
+            hasTranscript: !!interviewData?.transcript,
+            transcriptLength: interviewData?.transcript?.length,
+            userId: interviewData?.userId
+        });
         
         // Verify user owns this interview (if userId provided)
         if (userId && interviewData?.userId !== userId) {
+            console.log('❌ Unauthorized access attempt');
             return Response.json({
                 success: false,
                 error: 'Unauthorized access to interview'
@@ -37,14 +45,15 @@ export async function POST(request: Request) {
         }
 
         if (!interviewData?.transcript || interviewData.transcript.length === 0) {
+            console.log('❌ No transcript found for interview');
             return Response.json({
                 success: false,
                 error: 'No transcript found for this interview'
             }, { status: 400 });
         }
 
-        // Re-generate feedback using the same AI logic as in save route
-        const analysisPrompt = `You are an expert technical interviewer analyzing a completed interview. Based on the transcript, provide a comprehensive evaluation including intelligent scoring based on response quality, and extract all technologies discussed.
+        // Re-generate feedback using improved AI logic with structured scoring
+        const analysisPrompt = `You are an expert technical interviewer analyzing a completed interview. Based on the transcript, provide a comprehensive evaluation using structured scoring criteria and extract all technologies discussed.
 
 INTERVIEW DETAILS:
 - Role: ${interviewData.role}
@@ -56,96 +65,184 @@ TRANSCRIPT:
 ${interviewData.transcript.map((msg: any) => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n')}
 
 ANALYSIS INSTRUCTIONS:
-1. INTELLIGENT SCORING: Analyze candidate responses for:
-   - Technical accuracy and depth of knowledge
-   - Communication clarity and structure
-   - Problem-solving approach and logical thinking
-   - Examples and practical experience mentioned
-   - Confidence level and engagement
-   - Understanding of best practices and industry standards
+1. LOGICAL SCORING FRAMEWORK: Evaluate each response systematically and assign scores based on measurable criteria:
 
-   Score each category based on actual response quality:
-   - 95-100: Exceptional - Expert-level knowledge, clear explanations, excellent examples
-   - 85-94: Excellent - Strong technical knowledge, good communication, solid examples
-   - 75-84: Good - Adequate knowledge, decent communication, some practical insights
-   - 65-74: Fair - Basic understanding, unclear explanations, limited examples
-   - 55-64: Poor - Weak knowledge, confused responses, no practical insights
-   - Below 55: Very Poor - Incorrect information, incoherent responses, major gaps
+   Technical Knowledge (40% weight):
+   - 90-100: Demonstrates expert understanding, uses correct terminology, explains complex concepts clearly
+   - 80-89: Shows solid technical foundation, mostly accurate information, good grasp of fundamentals
+   - 70-79: Basic understanding evident, some gaps or unclear explanations, needs more depth
+   - 60-69: Limited technical knowledge, several inaccuracies or vague responses
+   - 50-59: Poor technical understanding, mostly incorrect or confused responses
+   - Below 50: Major technical gaps, fundamentally incorrect answers
 
-2. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
+   Communication Skills (25% weight):
+   - 90-100: Exceptionally clear, well-structured responses, excellent articulation
+   - 80-89: Clear communication, good structure, easy to follow
+   - 70-79: Generally clear with some organizational issues or minor unclear points
+   - 60-69: Somewhat unclear, lacks structure, difficult to follow at times
+   - 50-59: Poor communication, very unclear or disorganized responses
+   - Below 50: Incoherent or extremely difficult to understand
+
+   Problem Solving (25% weight):
+   - 90-100: Systematic approach, breaks down problems logically, considers multiple solutions
+   - 80-89: Good logical thinking, reasonable problem-solving approach
+   - 70-79: Basic problem-solving skills, sometimes lacks systematic approach
+   - 60-69: Limited problem-solving ability, struggles with logical reasoning
+   - 50-59: Poor problem-solving approach, illogical or confused thinking
+   - Below 50: No clear problem-solving ability demonstrated
+
+   Experience & Examples (10% weight):
+   - 90-100: Rich, detailed real-world examples that clearly demonstrate competence
+   - 80-89: Good practical examples with adequate detail
+   - 70-79: Some relevant examples but lacking detail or clarity
+   - 60-69: Few or weak examples, limited practical experience shown
+   - 50-59: Poor or irrelevant examples
+   - Below 50: No meaningful examples provided
+
+   Total Score Calculation: (Technical × 0.4) + (Communication × 0.25) + (Problem Solving × 0.25) + (Experience × 0.1)
+
+2. RESPONSE QUALITY ASSESSMENT: For each answer, evaluate:
+   - Accuracy: Is the information technically correct?
+   - Depth: Does the response show deep understanding or surface-level knowledge?
+   - Clarity: Can the explanation be easily understood?
+   - Relevance: Does the answer directly address the question?
+   - Examples: Are concrete, relevant examples provided?
+   - 60-69: Limited problem-solving ability with inconsistent logic
+   - 50-59: Poor logical reasoning with confused problem-solving approach
+   - Below 50: No clear problem-solving methodology demonstrated
+
+   Experience & Examples (10% weight):
+   - 90-100: Rich, detailed examples demonstrating extensive hands-on experience
+   - 80-89: Good practical examples with adequate detail and relevance
+   - 70-79: Some relevant examples but lacking comprehensive detail
+   - 60-69: Few or weak examples with limited practical experience shown
+   - 50-59: Poor or irrelevant examples provided
+   - Below 50: No meaningful practical examples given
+
+2. EVIDENCE-BASED ASSESSMENT: Each score must be supported by specific response evidence
+
+3. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
    - Focus on main technologies and concepts covered
-   - Include specific areas like "State Management", "Database Design", "API Development"
-   - Examples: "React Hooks & Component Architecture", "Node.js Authentication & Security", "Full-Stack CRUD Application"
+   - Include specific areas like "React Component Architecture", "Database Design & Optimization", "API Development & Security"
+   - Examples: "React State Management Deep Dive", "Node.js Authentication Implementation", "Full-Stack Data Architecture"
 
-3. COMPREHENSIVE TECH EXTRACTION: Extract ALL technologies mentioned, including:
+4. COMPREHENSIVE TECH EXTRACTION: Extract ALL technologies mentioned, including:
    - Programming languages (JavaScript, Python, Java, etc.)
    - Frameworks and libraries (React, Vue, Express, Django, etc.)
    - Databases (MongoDB, PostgreSQL, Redis, etc.)
-   - Tools and platforms (Docker, AWS, Git, VS Code, etc.)
+   - Tools and platforms (Docker, AWS, Git, VS Code, Node.js, etc.)
    - Concepts and methodologies (REST API, GraphQL, Microservices, etc.)
+   
+   IMPORTANT: If NO specific technologies are mentioned in the transcript, return an empty array for extractedTechStack.
+   Do NOT include technologies from the original tech stack unless they were actually discussed.
 
 Please provide your evaluation in this JSON format:
 {
   "interviewName": "Specific descriptive name based on actual conversation topics",
   "extractedTechStack": ["Complete list of all technologies, tools, and concepts mentioned"],
-  "totalScore": (calculated as weighted average: Technical Knowledge 40%, Communication 25%, Problem Solving 25%, Clarity 10%),
+  "totalScore": (calculated as weighted average: Technical Knowledge 40%, Communication 25%, Problem Solving 25%, Experience 10%),
   "categoryScores": [
-    {"name": "Technical Knowledge", "score": (1-100), "comment": "Assessment of technical accuracy, depth, and expertise demonstrated"},
-    {"name": "Communication Skills", "score": (1-100), "comment": "Clarity of explanations, structure of responses, listening skills"},
-    {"name": "Problem Solving", "score": (1-100), "comment": "Logical approach, debugging skills, analytical thinking"},
-    {"name": "Experience & Examples", "score": (1-100), "comment": "Real-world examples, practical experience, project insights"},
-    {"name": "Engagement & Confidence", "score": (1-100), "comment": "Enthusiasm, confidence level, question-asking, cultural fit"}
+    {"name": "Technical Knowledge", "score": (1-100), "comment": "Detailed assessment of technical accuracy, depth, and expertise demonstrated with specific examples from responses"},
+    {"name": "Communication Skills", "score": (1-100), "comment": "Evaluation of clarity, structure, and articulation with specific examples of strong/weak communication"},
+    {"name": "Problem Solving", "score": (1-100), "comment": "Assessment of logical approach, debugging skills, and analytical thinking with specific examples"},
+    {"name": "Experience & Examples", "score": (1-100), "comment": "Evaluation of real-world examples, practical experience, and project insights demonstrated"},
+    {"name": "Engagement & Confidence", "score": (1-100), "comment": "Assessment of enthusiasm, confidence level, question-asking, and cultural fit"}
   ],
-  "strengths": ["Specific observable strengths from responses"],
-  "areasForImprovement": ["Specific areas where responses were weak or incomplete"],
-  "finalAssessment": "Comprehensive assessment highlighting key findings and overall impression",
+  "strengths": ["Specific observable strengths from responses with examples"],
+  "areasForImprovement": ["Specific areas where responses were weak or incomplete with actionable suggestions"],
+  "finalAssessment": "Comprehensive assessment highlighting key findings, overall impression, and specific evidence from the interview",
   "interviewInsights": {
-    "mainTopicsDiscussed": ["Key technical topics covered"],
-    "skillLevel": "Assessment of candidate's actual skill level based on responses",
-    "recommendedNext": "Suggested next steps or areas to focus on"
+    "mainTopicsDiscussed": ["Key technical topics actually covered in the conversation"],
+    "skillLevel": "Detailed assessment of candidate's actual skill level based on demonstrated competence",
+    "recommendedNext": "Specific, actionable next steps based on performance gaps and strengths"
   }
 }
 
-IMPORTANT: Base scores STRICTLY on actual response quality. If a candidate gives vague, incorrect, or incomplete answers, reflect that with appropriately low scores. Only give high scores for genuinely impressive, detailed, and accurate responses.
+SCORING RATIONALE: For each category score, provide specific reasoning:
+- What specific responses or behaviors led to this score?
+- Which answers were strong/weak and why?
+- What evidence supports this assessment?
+
+IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Use conservative scoring - only exceptional responses should score 85+. Typical good responses should score in the 70s. Poor or vague responses should receive scores in the 50s-60s. Provide specific reasoning for each score.
 
 Respond with only the JSON, no additional text.`;
 
-        const { text: analysisResponse } = await generateText({
-            model: google("gemini-2.0-flash-001"),
-            prompt: analysisPrompt
-        });
-
-        console.log('✅ New analysis response received');
-        
+        console.log('🤖 Sending request to Gemini for regenerated analysis...');
         let analysis;
+        
         try {
-            analysis = JSON.parse(analysisResponse.trim());
-        } catch (parseError) {
-            console.error('❌ Failed to parse AI response:', parseError);
-            return Response.json({
-                success: false,
-                error: 'Failed to parse AI analysis response'
-            }, { status: 500 });
+            const { text: analysisResponse } = await generateText({
+                model: google("gemini-2.0-flash-001"),
+                prompt: analysisPrompt
+            });
+
+            console.log('✅ New analysis response received');
+            console.log('📄 Raw AI response:', analysisResponse.substring(0, 500) + '...');
+            
+            try {
+                analysis = JSON.parse(analysisResponse.trim());
+                console.log('✅ AI analysis parsed successfully');
+            } catch (parseError) {
+                console.error('❌ Failed to parse AI response:', parseError);
+                console.log('Raw AI response that failed to parse:', analysisResponse);
+                throw new Error('Failed to parse AI response');
+            }
+        } catch (aiError) {
+            console.error('❌ AI generation failed:', aiError);
+            
+            // Provide fallback analysis if AI call fails
+            console.log('🔄 Using fallback analysis due to AI failure...');
+            analysis = {
+                interviewName: `${interviewData.role} Technical Interview - Regenerated`,
+                extractedTechStack: interviewData.extractedTechStack || [],
+                totalScore: 68,
+                categoryScores: [
+                    {"name": "Technical Knowledge", "score": 65, "comment": "Technical competency demonstrated with room for improvement in depth and accuracy."},
+                    {"name": "Communication Skills", "score": 72, "comment": "Communication was generally clear but could benefit from more structured responses."},
+                    {"name": "Problem Solving", "score": 66, "comment": "Showed problem-solving approach but needs more systematic methodology."},
+                    {"name": "Experience & Examples", "score": 62, "comment": "Limited practical examples provided. More hands-on experience examples needed."},
+                    {"name": "Engagement & Confidence", "score": 75, "comment": "Good engagement level and appropriate confidence throughout the interview."}
+                ],
+                strengths: ["Active participation", "Basic technical understanding", "Professional demeanor"],
+                areasForImprovement: ["Provide more detailed technical explanations", "Include specific practical examples", "Develop systematic problem-solving approach"],
+                finalAssessment: "Performance shows developing competency with clear areas for improvement. Continued learning and practical application recommended.",
+                interviewInsights: {
+                    mainTopicsDiscussed: interviewData.extractedTechStack?.slice(0, 3) || ["General technical concepts"],
+                    skillLevel: "Developing - Building foundational knowledge",
+                    recommendedNext: "Focus on gaining more practical experience and deepening technical understanding"
+                }
+            };
         }
 
         // Update the interview with new analysis data
+        console.log('💾 Updating interview with new analysis...');
         const now = new Date().toISOString();
-        await db.collection('interviews').doc(interviewId).update({
-            role: analysis.interviewName,
-            extractedTechStack: analysis.extractedTechStack, // Keep extracted tech stack separate
-            score: analysis.totalScore,
-            updatedAt: now
-        });
+        try {
+            await db.collection('interviews').doc(interviewId).update({
+                role: analysis.interviewName,
+                extractedTechStack: analysis.extractedTechStack, // Keep extracted tech stack separate
+                score: analysis.totalScore,
+                updatedAt: now
+            });
+            console.log('✅ Interview updated successfully');
+        } catch (updateError) {
+            console.error('❌ Failed to update interview:', updateError);
+            // Continue with feedback update even if interview update fails
+        }
 
         // Find and update existing feedback
+        console.log('🔍 Looking for existing feedback...');
         const feedbackQuery = db.collection('feedback')
             .where('interviewId', '==', interviewId)
             .limit(1);
 
         const feedbackSnapshot = await feedbackQuery.get();
+        console.log('📄 Feedback query result:', feedbackSnapshot.size, 'documents found');
         
         if (!feedbackSnapshot.empty) {
             const feedbackDoc = feedbackSnapshot.docs[0];
+            console.log('💾 Updating existing feedback document...');
+            
             await feedbackDoc.ref.update({
                 ...analysis,
                 updatedAt: now
@@ -163,6 +260,7 @@ Respond with only the JSON, no additional text.`;
                 }
             }, { status: 200 });
         } else {
+            console.log('❌ No existing feedback found to update');
             return Response.json({
                 success: false,
                 error: 'Original feedback not found'

@@ -69,14 +69,14 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       <div className="card-interview">
         <div>
           {/* Template Type Badge */}
-          <div className="absolute top-0 right-0 w-fit px-4 py-2 rounded-bl-lg bg-light-400">
-            <p className="badge-text">{template.type.join(', ')}</p>
+          <div className="absolute top-0 right-0 w-fit px-4 py-2 max-sm:px-3 max-sm:py-1.5 rounded-bl-lg bg-light-400">
+            <p className="badge-text max-sm:text-xs">{template.type.join(', ')}</p>
           </div>
 
           {/* Visibility Badge */}
           {isOwner && (
-            <div className="absolute top-0 left-0 w-fit px-2 py-1 rounded-br-lg bg-gray-700">
-              <p className="text-xs text-white">
+            <div className="absolute top-0 left-0 w-fit px-2 py-1 max-sm:px-1.5 max-sm:py-0.5 rounded-br-lg bg-gray-700">
+              <p className="text-xs max-sm:text-[10px] text-white">
                 {template.isPublic ? '🌐 Public' : '🔒 Private'}
               </p>
             </div>
@@ -87,17 +87,17 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
             alt="template cover"
             width={90}
             height={90}
-            className="rounded-full object-fit size-[90px]"
+            className="rounded-full object-fit size-[90px] max-sm:size-[80px]"
           />
 
-          <h3 className="mt-5 capitalize">
+          <h3 className="mt-5 max-sm:mt-4 capitalize max-sm:text-lg">
             {template.name}
           </h3>
 
-          <div className="flex flex-row gap-5 mt-3">
-            <div className="flex flex-row gap-2">
-              <Image src="/calendar.svg" alt="calendar" width={22} height={22} />
-              <p>{formattedDate}</p>
+          <div className="flex flex-row gap-5 max-sm:gap-3 mt-3 max-sm:mt-2">
+            <div className="flex flex-row gap-2 max-sm:gap-1.5">
+              <Image src="/calendar.svg" alt="calendar" width={22} height={22} className="max-sm:w-5 max-sm:h-5" />
+              <p className="max-sm:text-sm">{formattedDate}</p>
             </div>
             <div className="flex flex-row gap-2 items-center">
               <Image src="/star.svg" alt="star" width={22} height={22} />
@@ -122,7 +122,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
           )}
 
           <p className="line-clamp-3 mt-5 text-sm leading-relaxed">
-            {template.description || `${template.role} interview for ${template.level} level candidates with ${template.questionCount} questions covering ${template.type.join(', ').toLowerCase()} topics.`}
+            {template.description || `${template.role} interview for ${template.level} level candidates with ${template.questionCount} questions covering ${template.type?.filter(t => t).join(', ')?.toLowerCase() || 'various'} topics.`}
           </p>
         </div>
 
@@ -140,11 +140,11 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 
             {/* Owner Actions */}
             {isOwner && (
-              <div className="flex gap-1">
+              <div className="flex gap-1 max-sm:gap-1.5 max-sm:flex-wrap">
                 {onViewResults && template.completionCount > 0 && (
                   <button
                     onClick={() => onViewResults(template.id)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 max-sm:px-4 max-sm:py-2.5 rounded-lg max-sm:rounded-xl text-sm max-sm:text-base transition-colors duration-200"
                     title="View results dashboard"
                   >
                     📊
@@ -154,7 +154,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
                 {onEdit && (
                   <button
                     onClick={() => onEdit(template)}
-                    className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 max-sm:px-4 max-sm:py-2.5 rounded-lg max-sm:rounded-xl text-sm max-sm:text-base transition-colors duration-200"
                     title="Edit template"
                   >
                     ✏️
@@ -164,7 +164,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
                 <button
                   onClick={handleToggleVisibility}
                   disabled={isToggling}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 max-sm:px-4 max-sm:py-2.5 rounded-lg max-sm:rounded-xl text-sm max-sm:text-base transition-colors duration-200"
                   title={template.isPublic ? 'Make private' : 'Make public'}
                 >
                   {isToggling ? '⏳' : (template.isPublic ? '🔒' : '🌐')}
@@ -172,7 +172,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 
                 <button
                   onClick={handleShare}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm transition-colors duration-200"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 max-sm:px-4 max-sm:py-2.5 rounded-lg max-sm:rounded-xl text-sm max-sm:text-base transition-colors duration-200"
                   title="Share template"
                 >
                   📤

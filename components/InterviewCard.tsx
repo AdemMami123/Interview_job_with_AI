@@ -89,7 +89,7 @@ const InterviewCard = ({
         return `Initial attempt with ${score}/100 points. Great learning opportunity - keep practicing to improve your skills!`;
       }
     } else if (id.startsWith('template-')) {
-      return `Practice your ${role.toLowerCase().replace(' practice', '')} skills with this AI-powered interview simulation.`;
+      return `Practice your ${role?.toLowerCase()?.replace(' practice', '') || 'interview'} skills with this AI-powered interview simulation.`;
     } else {
       return "You haven't taken the interview yet. Take it now to improve your skills.";
     }

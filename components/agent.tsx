@@ -555,17 +555,17 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
 
     {/* Progress indicator for template interviews */}
     {type === 'template' && interviewQuestions.length > 0 && callStatus === CallStatus.ACTIVE && (
-        <div className='w-full max-w-md mx-auto my-4'>
-            <div className='bg-gray-800 rounded-lg p-4'>
-                <div className='flex justify-between items-center mb-2'>
-                    <span className='text-sm text-gray-300'>Question Progress</span>
-                    <span className='text-sm text-blue-400 font-medium'>
+        <div className='w-full max-w-md mx-auto my-4 max-sm:my-6'>
+            <div className='bg-gray-800 rounded-lg max-sm:rounded-xl p-4 max-sm:p-6'>
+                <div className='flex justify-between items-center mb-2 max-sm:mb-3'>
+                    <span className='text-sm max-sm:text-base text-gray-300'>Question Progress</span>
+                    <span className='text-sm max-sm:text-base text-blue-400 font-medium max-sm:font-semibold'>
                         {currentQuestionIndex + 1} of {interviewQuestions.length}
                     </span>
                 </div>
-                <div className='w-full bg-gray-700 rounded-full h-2'>
+                <div className='w-full bg-gray-700 rounded-full h-2 max-sm:h-3'>
                     <div 
-                        className='bg-blue-500 h-2 rounded-full transition-all duration-500'
+                        className='bg-blue-500 h-2 max-sm:h-3 rounded-full transition-all duration-500'
                         style={{ width: `${((currentQuestionIndex + 1) / interviewQuestions.length) * 100}%` }}
                     ></div>
                 </div>
@@ -584,19 +584,19 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
     
     {/* Status indicators */}
     {speechError && (
-        <div className='w-full flex flex-col items-center gap-3 my-4'>
-            <div className='flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900 rounded-full'>
-                <div className='w-3 h-3 bg-red-500 rounded-full'></div>
-                <span className='text-sm text-red-800 dark:text-red-200'>❌ {speechError}</span>
+        <div className='w-full flex flex-col items-center gap-3 max-sm:gap-4 my-4 max-sm:my-6'>
+            <div className='flex items-center gap-2 px-4 py-2 max-sm:px-6 max-sm:py-3 bg-red-100 dark:bg-red-900 rounded-full max-sm:rounded-xl'>
+                <div className='w-3 h-3 max-sm:w-4 max-sm:h-4 bg-red-500 rounded-full'></div>
+                <span className='text-sm max-sm:text-base text-red-800 dark:text-red-200'>❌ {speechError}</span>
             </div>
             <button 
-                className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700'
+                className='px-4 py-2 max-sm:px-6 max-sm:py-3 max-sm:text-lg bg-gray-600 text-white rounded-lg max-sm:rounded-xl hover:bg-gray-700'
                 onClick={() => setShowTextInput(!showTextInput)}
             >
                 {showTextInput ? 'Hide Text Input' : '⌨️ Type Your Answer Instead'}
             </button>
             {voiceDisabled && (                    <button 
-                        className='px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700'
+                        className='px-4 py-2 max-sm:px-6 max-sm:py-3 max-sm:text-lg bg-green-600 text-white rounded-lg max-sm:rounded-xl hover:bg-green-700'
                         onClick={() => {
                             setVoiceDisabled(false);
                             setSpeechError(null);
@@ -611,13 +611,13 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
     
     {/* Text input fallback */}
     {showTextInput && (
-        <div className='w-full max-w-md mx-auto my-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800'>
-            <div className='flex flex-col gap-3'>
+        <div className='w-full max-w-md mx-auto my-4 p-4 max-sm:p-6 border rounded-lg max-sm:rounded-xl bg-gray-50 dark:bg-gray-800'>
+            <div className='flex flex-col gap-3 max-sm:gap-4'>
                 <textarea
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     placeholder="Type your answer here..."
-                    className='w-full p-3 border rounded-lg resize-none h-20 bg-white dark:bg-gray-700 text-black dark:text-white'
+                    className='w-full p-3 max-sm:p-4 border rounded-lg max-sm:rounded-xl resize-none h-20 max-sm:h-28 bg-white dark:bg-gray-700 text-black dark:text-white max-sm:text-lg'
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -625,17 +625,17 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                         }
                     }}
                 />
-                <div className='flex gap-2'>
+                <div className='flex gap-2 max-sm:gap-3 max-sm:flex-col'>
                     <button
                         onClick={handleTextInput}
                         disabled={!textInput.trim()}
-                        className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        className='flex-1 px-4 py-2 max-sm:py-3 max-sm:text-lg max-sm:font-semibold bg-blue-600 text-white rounded-lg max-sm:rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
                     >
                         Submit Answer
                     </button>
                     <button
                         onClick={() => {setShowTextInput(false); setTextInput('');}}
-                        className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700'
+                        className='px-4 py-2 max-sm:py-3 max-sm:text-lg bg-gray-600 text-white rounded-lg max-sm:rounded-xl hover:bg-gray-700'
                     >
                         Cancel
                     </button>
@@ -700,9 +700,9 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             </div>
         </div>
     )}
-    <div className='w-full flex justify-center gap-4'>
+    <div className='w-full flex justify-center gap-4 max-sm:flex-col max-sm:items-center max-sm:gap-3'>
         {callStatus !== CallStatus.ACTIVE ? (
-            <button className='relative btn-call mt-6 px-6 py-3 text-lg' onClick={handleCall}>
+            <button className='relative btn-call mt-6 px-6 py-3 text-lg max-sm:w-full max-sm:max-w-xs max-sm:py-4 max-sm:text-xl max-sm:font-bold' onClick={handleCall}>
     <span className={cn(
         'absolute inset-0 animate-ping rounded-full opacity-75 bg-current',
         callStatus !== CallStatus.CONNECTING && 'hidden'
@@ -716,14 +716,14 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
 </button>
         ) : (
             <>
-                <button className='btn-disconnect' onClick={handleDisconnect}>End Call</button>
+                <button className='btn-disconnect max-sm:w-full max-sm:max-w-xs max-sm:py-3 max-sm:text-lg' onClick={handleDisconnect}>End Call</button>
                 {(!isListening && !isSpeaking && !isThinking) && !voiceDisabled && (
                     <button 
                         className={cn(
-                            'px-4 py-2 text-white rounded-lg font-medium transition-all',
+                            'px-4 py-2 text-white rounded-lg font-medium transition-all max-sm:w-full max-sm:max-w-xs max-sm:py-3 max-sm:text-lg max-sm:font-semibold',
                             speechError 
-                                ? 'bg-green-600 hover:bg-green-700 animate-pulse' 
-                                : 'bg-blue-600 hover:bg-blue-700'
+                                ? 'bg-green-600 hover:bg-green-700 animate-pulse max-sm:bg-green-500' 
+                                : 'bg-blue-600 hover:bg-blue-700 max-sm:bg-blue-500'
                         )}
                         onClick={() => {
                             setSpeechError(null);
@@ -739,7 +739,7 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 )}
                 {voiceDisabled && (
                     <button 
-                        className='px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700'
+                        className='px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 max-sm:w-full max-sm:max-w-xs max-sm:py-3 max-sm:text-lg max-sm:bg-purple-500'
                         onClick={() => setShowTextInput(true)}
                     >
                         ⌨️ Use Text Input

@@ -143,8 +143,8 @@ const TemplateResultsPage = () => {
 
   const filteredAndSortedResponses = responses
     .filter(response =>
-      response.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      response.candidateEmail.toLowerCase().includes(searchTerm.toLowerCase())
+      (response.candidateName && response.candidateName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (response.candidateEmail && response.candidateEmail.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       switch (sortBy) {

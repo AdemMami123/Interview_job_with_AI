@@ -209,59 +209,59 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-700 p-8">
-        <h2 className="text-2xl font-bold text-white mb-6">
+    <div className="max-w-4xl mx-auto p-6 max-sm:p-4">
+      <div className="bg-gray-900 rounded-xl max-sm:rounded-lg shadow-lg border border-gray-700 p-8 max-sm:p-6">
+        <h2 className="text-2xl max-sm:text-xl font-bold text-white mb-6 max-sm:mb-4">
           {template ? 'Edit Interview Template' : 'Create Interview Template'}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 max-sm:space-y-4">
           {/* Basic Information */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 max-sm:gap-4 md:grid-cols-2 max-sm:grid-cols-1">
             <div>
-              <Label htmlFor="name" className="text-white">Template Name *</Label>
+              <Label htmlFor="name" className="text-white max-sm:text-lg">Template Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="e.g., Senior React Developer Interview"
-                className="bg-gray-800 border-gray-600 text-white"
+                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="role" className="text-white">Job Role *</Label>
+              <Label htmlFor="role" className="text-white max-sm:text-lg">Job Role *</Label>
               <Input
                 id="role"
                 value={formData.role}
                 onChange={(e) => handleInputChange('role', e.target.value)}
                 placeholder="e.g., Frontend Developer"
-                className="bg-gray-800 border-gray-600 text-white"
+                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
                 required
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="description" className="text-white">Description</Label>
+            <Label htmlFor="description" className="text-white max-sm:text-lg">Description</Label>
             <textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Brief description of what this interview template covers..."
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white"
+              className="w-full px-3 py-2 max-sm:px-4 max-sm:py-3 max-sm:text-lg bg-gray-800 border border-gray-600 rounded-md max-sm:rounded-lg text-white"
               rows={3}
             />
           </div>
 
           {/* Interview Configuration */}
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 max-sm:gap-4 md:grid-cols-3 max-sm:grid-cols-1">
             <div>
-              <Label className="text-white">Difficulty Level *</Label>
+              <Label className="text-white max-sm:text-lg">Difficulty Level *</Label>
               <select
                 value={formData.level}
                 onChange={(e) => handleInputChange('level', e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white"
+                className="w-full px-3 py-2 max-sm:px-4 max-sm:py-3 max-sm:text-lg bg-gray-800 border border-gray-600 rounded-md max-sm:rounded-lg text-white"
                 required
               >
                 {DIFFICULTY_LEVELS.map(level => (
@@ -270,14 +270,14 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
               </select>
             </div>
             <div>
-              <Label className="text-white">Number of Questions *</Label>
+              <Label className="text-white max-sm:text-lg">Number of Questions *</Label>
               <Input
                 type="number"
                 value={formData.questionCount}
                 onChange={(e) => handleInputChange('questionCount', parseInt(e.target.value))}
                 min="1"
                 max="20"
-                className="bg-gray-800 border-gray-600 text-white"
+                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
                 required
               />
             </div>
@@ -285,17 +285,17 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
 
           {/* Interview Types */}
           <div>
-            <Label className="text-white">Interview Types * (Select at least one)</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+            <Label className="text-white max-sm:text-lg">Interview Types * (Select at least one)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 max-sm:grid-cols-1 gap-2 max-sm:gap-3 mt-2 max-sm:mt-3">
               {INTERVIEW_TYPES.map(type => (
-                <label key={type} className="flex items-center space-x-2 cursor-pointer">
+                <label key={type} className="flex items-center space-x-2 max-sm:space-x-3 cursor-pointer max-sm:p-2 max-sm:bg-gray-800 max-sm:rounded-lg">
                   <input
                     type="checkbox"
                     checked={formData.type.includes(type)}
                     onChange={() => handleTypeToggle(type)}
-                    className="rounded"
+                    className="rounded max-sm:w-5 max-sm:h-5"
                   />
-                  <span className="text-sm text-gray-300">{type}</span>
+                  <span className="text-sm max-sm:text-base text-gray-300">{type}</span>
                 </label>
               ))}
             </div>
@@ -303,47 +303,47 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
 
           {/* Tech Stack */}
           <div>
-            <Label className="text-white">Tech Stack</Label>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Label className="text-white max-sm:text-lg">Tech Stack</Label>
+            <div className="space-y-3 max-sm:space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 max-sm:grid-cols-1 gap-2 max-sm:gap-3">
                 {POPULAR_TECHS.map(tech => (
-                  <label key={tech} className="flex items-center space-x-2 cursor-pointer">
+                  <label key={tech} className="flex items-center space-x-2 max-sm:space-x-3 cursor-pointer max-sm:p-2 max-sm:bg-gray-800 max-sm:rounded-lg">
                     <input
                       type="checkbox"
                       checked={formData.techstack.includes(tech)}
                       onChange={() => handleTechToggle(tech)}
-                      className="rounded"
+                      className="rounded max-sm:w-5 max-sm:h-5"
                     />
-                    <span className="text-sm text-gray-300">{tech}</span>
+                    <span className="text-sm max-sm:text-base text-gray-300">{tech}</span>
                   </label>
                 ))}
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 max-sm:flex-col max-sm:gap-3">
                 <Input
                   value={customTech}
                   onChange={(e) => setCustomTech(e.target.value)}
                   placeholder="Add custom technology..."
-                  className="bg-gray-800 border-gray-600 text-white"
+                  className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomTech())}
                 />
-                <Button type="button" onClick={addCustomTech} className="bg-blue-600 hover:bg-blue-700">
+                <Button type="button" onClick={addCustomTech} className="bg-blue-600 hover:bg-blue-700 max-sm:w-full max-sm:py-3 max-sm:text-lg">
                   Add
                 </Button>
               </div>
 
               {formData.techstack.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 max-sm:gap-3">
                   {formData.techstack.map(tech => (
                     <span
                       key={tech}
-                      className="inline-flex items-center px-2 py-1 bg-blue-900/50 text-blue-300 text-sm rounded-full border border-blue-700"
+                      className="inline-flex items-center px-2 py-1 max-sm:px-3 max-sm:py-2 bg-blue-900/50 text-blue-300 text-sm max-sm:text-base rounded-full border border-blue-700"
                     >
                       {tech}
                       <button
                         type="button"
                         onClick={() => removeTech(tech)}
-                        className="ml-2 text-blue-400 hover:text-blue-200"
+                        className="ml-2 max-sm:ml-3 text-blue-400 hover:text-blue-200 max-sm:text-lg"
                       >
                         ×
                       </button>
@@ -407,24 +407,24 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
           </div>
 
           {/* Visibility */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 max-sm:space-x-3 max-sm:p-3 max-sm:bg-gray-800 max-sm:rounded-lg">
             <input
               type="checkbox"
               checked={formData.isPublic}
               onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-              className="rounded"
+              className="rounded max-sm:w-5 max-sm:h-5"
             />
-            <span className="text-sm text-gray-300">
+            <span className="text-sm max-sm:text-base text-gray-300">
               Make this template public (others can find and use it)
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-4 max-sm:gap-3 max-sm:flex-col pt-4 max-sm:pt-6">
             <Button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 max-sm:w-full max-sm:py-3 max-sm:text-lg max-sm:font-semibold"
             >
               {isLoading ? 'Saving...' : (template ? 'Update Template' : 'Create Template')}
             </Button>
@@ -432,7 +432,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
               <Button
                 type="button"
                 onClick={onCancel}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 max-sm:w-full max-sm:py-3 max-sm:text-lg"
               >
                 Cancel
               </Button>

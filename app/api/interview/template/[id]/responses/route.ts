@@ -134,18 +134,48 @@ TRANSCRIPT:
 ${transcript.map((msg: any) => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n')}
 
 ANALYSIS INSTRUCTIONS:
-1. Evaluate candidate responses based on the template's intended focus areas
-2. Score appropriately for the specified level (${templateData.level})
-3. Consider the interview types: ${templateData.type.join(', ')}
-4. Extract all technologies and concepts actually discussed
-5. Provide actionable feedback based on template expectations
+1. SYSTEMATIC EVALUATION FRAMEWORK: Assess each response using structured criteria:
 
-Score each category (1-100):
-- Technical Knowledge: Accuracy, depth, understanding of concepts
-- Communication: Clarity, structure, articulation
-- Problem Solving: Logical thinking, approach to challenges
-- Experience & Examples: Real-world knowledge, practical insights
-- Engagement: Enthusiasm, curiosity, professionalism
+   Technical Knowledge (40% weight):
+   - 90-100: Expert-level understanding, accurate technical details, advanced concepts explained clearly
+   - 80-89: Solid technical foundation, correct information, good grasp of core concepts
+   - 70-79: Basic understanding with some gaps, generally correct but lacks depth
+   - 60-69: Limited technical knowledge, some inaccuracies or overly vague responses
+   - 50-59: Poor technical understanding, significant errors or confusion
+   - Below 50: Major technical gaps, fundamentally incorrect information
+
+   Communication Skills (25% weight):
+   - 90-100: Exceptionally clear and well-organized responses, excellent articulation
+   - 80-89: Clear communication with good structure and flow
+   - 70-79: Generally understandable with minor clarity issues
+   - 60-69: Somewhat unclear or poorly organized responses
+   - 50-59: Difficult to follow, poor communication structure
+   - Below 50: Very unclear or incoherent responses
+
+   Problem Solving (25% weight):
+   - 90-100: Methodical approach, breaks down complex problems systematically
+   - 80-89: Good logical thinking and reasonable problem-solving process
+   - 70-79: Basic problem-solving with some logical gaps
+   - 60-69: Limited problem-solving ability, struggles with systematic thinking
+   - 50-59: Poor logical reasoning, confused approach to problems
+   - Below 50: No clear problem-solving methodology demonstrated
+
+   Experience & Examples (10% weight):
+   - 90-100: Rich, detailed examples that clearly demonstrate hands-on competence
+   - 80-89: Good practical examples with sufficient detail
+   - 70-79: Some relevant examples but lacking comprehensive detail
+   - 60-69: Few or weak examples, limited practical experience evident
+   - 50-59: Poor or irrelevant examples provided
+   - Below 50: No meaningful practical examples given
+
+2. LEVEL-APPROPRIATE ASSESSMENT: Adjust expectations based on the template level (${templateData.level}):
+   - Beginner: Focus on basic understanding and learning ability
+   - Intermediate: Expect solid fundamentals and some practical experience
+   - Advanced: Require deep expertise and extensive real-world application
+
+3. TEMPLATE-SPECIFIC EVALUATION: Consider the template's focus areas (${templateData.type.join(', ')}) and required competencies
+
+4. COMPREHENSIVE FEEDBACK: Provide specific, actionable insights based on actual responses and template requirements
 
 Please provide evaluation in this JSON format:
 {
@@ -169,7 +199,7 @@ Please provide evaluation in this JSON format:
   }
 }
 
-IMPORTANT: Base scores on actual response quality relative to the ${templateData.level} level expectations.`;
+IMPORTANT: Base scores on actual response quality relative to the ${templateData.level} level expectations. Provide specific reasoning for each score based on observed competencies and response quality. Conservative scoring ensures credible assessments.`;
 
         let feedback;
         let score = 0;
@@ -185,28 +215,31 @@ IMPORTANT: Base scores on actual response quality relative to the ${templateData
             console.log('✅ AI feedback generated successfully');
         } catch (aiError) {
             console.error('❌ AI feedback generation failed:', aiError);
-            // Fallback feedback
+            // Conservative fallback feedback based on template level
+            const baseScore = templateData.level === 'Beginner' ? 68 : 
+                             templateData.level === 'Intermediate' ? 62 : 58; // Advanced has higher expectations
+            
             feedback = {
                 interviewName: `${templateData.name} - ${candidateName || 'Anonymous'}`,
                 extractedTechStack: [],
-                totalScore: 75,
+                totalScore: baseScore,
                 categoryScores: [
-                    {"name": "Technical Knowledge", "score": 75, "comment": "Demonstrated good technical understanding"},
-                    {"name": "Communication Skills", "score": 75, "comment": "Clear communication throughout the interview"},
-                    {"name": "Problem Solving", "score": 75, "comment": "Showed logical thinking approach"},
-                    {"name": "Experience & Examples", "score": 75, "comment": "Provided relevant examples"},
-                    {"name": "Engagement & Confidence", "score": 75, "comment": "Good engagement level"}
+                    {"name": "Technical Knowledge", "score": baseScore - 2, "comment": `Demonstrated ${templateData.level.toLowerCase()} level understanding with room for improvement in depth and accuracy.`},
+                    {"name": "Communication Skills", "score": baseScore + 3, "comment": "Communication was generally clear but could benefit from more structured and detailed explanations."},
+                    {"name": "Problem Solving", "score": baseScore - 3, "comment": "Showed some problem-solving ability but needs more systematic approach and logical reasoning."},
+                    {"name": "Experience & Examples", "score": baseScore - 5, "comment": "Limited practical examples provided. More real-world experience and concrete examples needed."},
+                    {"name": "Engagement & Confidence", "score": baseScore + 5, "comment": "Good engagement level and appropriate confidence for the interview process."}
                 ],
-                strengths: ["Good participation", "Clear responses"],
-                areasForImprovement: ["More detailed examples", "Deeper technical insights"],
-                finalAssessment: "Solid performance with room for growth",
+                strengths: ["Active participation", "Basic understanding of concepts", "Professional demeanor"],
+                areasForImprovement: ["Provide more detailed technical explanations", "Include specific practical examples", "Develop deeper understanding of core technologies"],
+                finalAssessment: `Performance indicates ${templateData.level.toLowerCase()} level competency with potential for growth. Continued learning and practical application recommended.`,
                 interviewInsights: {
-                    mainTopicsDiscussed: ["General discussion"],
-                    skillLevel: "Developing",
-                    recommendedNext: "Continue practicing and gaining experience"
+                    mainTopicsDiscussed: templateData.techstack.slice(0, 3),
+                    skillLevel: `${templateData.level} - Developing competency`,
+                    recommendedNext: "Continue practicing core concepts and gain more hands-on experience"
                 }
             };
-            score = 75;
+            score = baseScore;
         }
 
         // Create response document

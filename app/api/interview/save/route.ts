@@ -38,28 +38,55 @@ TRANSCRIPT:
 ${transcript.map((msg: any) => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n')}
 
 ANALYSIS INSTRUCTIONS:
-1. INTELLIGENT SCORING: Analyze candidate responses for:
-   - Technical accuracy and depth of knowledge
-   - Communication clarity and structure
-   - Problem-solving approach and logical thinking
-   - Examples and practical experience mentioned
-   - Confidence level and engagement
-   - Understanding of best practices and industry standards
+1. LOGICAL SCORING FRAMEWORK: Evaluate each response systematically and assign scores based on measurable criteria:
 
-   Score each category based on actual response quality:
-   - 95-100: Exceptional - Expert-level knowledge, clear explanations, excellent examples
-   - 85-94: Excellent - Strong technical knowledge, good communication, solid examples
-   - 75-84: Good - Adequate knowledge, decent communication, some practical insights
-   - 65-74: Fair - Basic understanding, unclear explanations, limited examples
-   - 55-64: Poor - Weak knowledge, confused responses, no practical insights
-   - Below 55: Very Poor - Incorrect information, incoherent responses, major gaps
+   Technical Knowledge (40% weight):
+   - 90-100: Demonstrates expert understanding, uses correct terminology, explains complex concepts clearly
+   - 80-89: Shows solid technical foundation, mostly accurate information, good grasp of fundamentals
+   - 70-79: Basic understanding evident, some gaps or unclear explanations, needs more depth
+   - 60-69: Limited technical knowledge, several inaccuracies or vague responses
+   - 50-59: Poor technical understanding, mostly incorrect or confused responses
+   - Below 50: Major technical gaps, fundamentally incorrect answers
 
-2. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
+   Communication Skills (25% weight):
+   - 90-100: Exceptionally clear, well-structured responses, excellent articulation
+   - 80-89: Clear communication, good structure, easy to follow
+   - 70-79: Generally clear with some organizational issues or minor unclear points
+   - 60-69: Somewhat unclear, lacks structure, difficult to follow at times
+   - 50-59: Poor communication, very unclear or disorganized responses
+   - Below 50: Incoherent or extremely difficult to understand
+
+   Problem Solving (25% weight):
+   - 90-100: Systematic approach, breaks down problems logically, considers multiple solutions
+   - 80-89: Good logical thinking, reasonable problem-solving approach
+   - 70-79: Basic problem-solving skills, sometimes lacks systematic approach
+   - 60-69: Limited problem-solving ability, struggles with logical reasoning
+   - 50-59: Poor problem-solving approach, illogical or confused thinking
+   - Below 50: No clear problem-solving ability demonstrated
+
+   Experience & Examples (10% weight):
+   - 90-100: Rich, detailed real-world examples that clearly demonstrate competence
+   - 80-89: Good practical examples with adequate detail
+   - 70-79: Some relevant examples but lacking detail or clarity
+   - 60-69: Few or weak examples, limited practical experience shown
+   - 50-59: Poor or irrelevant examples
+   - Below 50: No meaningful examples provided
+
+   Total Score Calculation: (Technical × 0.4) + (Communication × 0.25) + (Problem Solving × 0.25) + (Experience × 0.1)
+
+2. RESPONSE QUALITY ASSESSMENT: For each answer, evaluate:
+   - Accuracy: Is the information technically correct?
+   - Depth: Does the response show deep understanding or surface-level knowledge?
+   - Clarity: Can the explanation be easily understood?
+   - Relevance: Does the answer directly address the question?
+   - Examples: Are concrete, relevant examples provided?
+
+3. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
    - Focus on main technologies and concepts covered
    - Include specific areas like "State Management", "Database Design", "API Development"
-   - Examples: "React Hooks & Component Architecture", "Node.js Authentication & Security", "Full-Stack CRUD Application"
+   - Examples: "React State Management Deep Dive", "Database Design & Optimization", "Full-Stack Authentication Implementation"
 
-3. CRITICAL TECH EXTRACTION: Carefully analyze the transcript and extract ONLY technologies that were actually mentioned, discussed, or referenced during the conversation:
+4. CRITICAL TECH EXTRACTION: Carefully analyze the transcript and extract ONLY technologies that were actually mentioned, discussed, or referenced during the conversation:
    - Programming languages (JavaScript, Python, Java, TypeScript, etc.)
    - Frameworks and libraries (React, Angular, Vue, Express, Django, Next.js, etc.)
    - Databases (MongoDB, PostgreSQL, MySQL, Redis, etc.)
@@ -91,7 +118,12 @@ Please provide your evaluation in this JSON format:
   }
 }
 
-IMPORTANT: Base scores STRICTLY on actual response quality. If a candidate gives vague, incorrect, or incomplete answers, reflect that with appropriately low scores. Only give high scores for genuinely impressive, detailed, and accurate responses.
+SCORING RATIONALE: For each category score, provide specific reasoning:
+- What specific responses or behaviors led to this score?
+- Which answers were strong/weak and why?
+- What evidence supports this assessment?
+
+IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Low-quality, vague, or incorrect answers should receive appropriately low scores (50s-60s). Average performance should score in the 70s. Only exceptional, detailed, and accurate responses should score 85+.
 
 Respond with only the JSON, no additional text.`;
 
@@ -123,25 +155,25 @@ Respond with only the JSON, no additional text.`;
                 transcriptText.includes(tech.replace('.', '').toLowerCase())
             );
             
-            // Enhanced fallback analysis with better default values
+            // Enhanced fallback analysis with more conservative default values
             analysis = {
                 interviewName: `${role} Technical Interview - ${new Date().toLocaleDateString()}`,
                 extractedTechStack: extractedFromTranscript.length > 0 ? extractedFromTranscript : [],
-                totalScore: 72, // More realistic default
+                totalScore: 65, // More conservative default - represents "Fair" performance
                 categoryScores: [
-                    {"name": "Technical Knowledge", "score": 70, "comment": "Demonstrated basic technical understanding with room for deeper insights"},
-                    {"name": "Communication Skills", "score": 75, "comment": "Clear communication with opportunities for more structured responses"},
-                    {"name": "Problem Solving", "score": 70, "comment": "Showed problem-solving approach with potential for more systematic thinking"},
-                    {"name": "Experience & Examples", "score": 68, "comment": "Provided some practical examples, could benefit from more detailed real-world scenarios"},
-                    {"name": "Engagement & Confidence", "score": 77, "comment": "Good engagement and confidence level throughout the interview"}
+                    {"name": "Technical Knowledge", "score": 63, "comment": "Demonstrated basic technical understanding. Responses showed some familiarity with concepts but lacked depth and specific examples."},
+                    {"name": "Communication Skills", "score": 68, "comment": "Communication was generally clear but could benefit from more structured responses and better articulation of complex ideas."},
+                    {"name": "Problem Solving", "score": 62, "comment": "Showed some problem-solving approach but responses indicated need for more systematic thinking and logical breakdown of problems."},
+                    {"name": "Experience & Examples", "score": 60, "comment": "Limited practical examples provided. Responses suggested theoretical knowledge but minimal real-world application experience."},
+                    {"name": "Engagement & Confidence", "score": 72, "comment": "Candidate showed good engagement and reasonable confidence level throughout the interview process."}
                 ],
-                strengths: ["Active participation", "Positive attitude", "Basic technical competence"],
-                areasForImprovement: ["More detailed technical explanations", "Structured problem-solving approach", "Real-world examples"],
-                finalAssessment: "Solid foundational performance with clear areas for growth and development. Shows potential with focused improvement.",
+                strengths: ["Demonstrated engagement", "Showed basic understanding of fundamental concepts", "Maintained professional demeanor"],
+                areasForImprovement: ["Provide more detailed technical explanations with specific examples", "Develop structured problem-solving methodology", "Gain more hands-on practical experience"],
+                finalAssessment: "Performance indicates developing technical competency with solid foundational knowledge. Candidate shows potential but needs continued learning and practical application to advance to next level. Focus on deepening technical understanding and gaining more hands-on experience.",
                 interviewInsights: {
-                    mainTopicsDiscussed: extractedFromTranscript.slice(0, 3),
-                    skillLevel: "Developing - Shows promise with continued learning",
-                    recommendedNext: "Focus on deeper technical understanding and practical application"
+                    mainTopicsDiscussed: extractedFromTranscript.slice(0, 3).length > 0 ? extractedFromTranscript.slice(0, 3) : ["General technical concepts"],
+                    skillLevel: "Developing - Foundational knowledge with room for growth",
+                    recommendedNext: "Focus on practical application, work on real projects, and deepen understanding of core technologies"
                 }
             };
             
