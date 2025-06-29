@@ -16,7 +16,7 @@ interface savedMessage {
     role:"user" |"system" |"assistant";
     content:string;
 }
-const Agent = ({userName,userId,type,questions}:AgentProps) => {
+const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,interviewType}:AgentProps) => {
     const router = useRouter();
     const [isSpeaking, setisSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -40,6 +40,7 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
     const [interviewStartTime, setInterviewStartTime] = useState<Date | null>(null);
     const [isSavingInterview, setIsSavingInterview] = useState(false);
     const [interviewSaved, setInterviewSaved] = useState(false);
+    const [isProcessingAnswer, setIsProcessingAnswer] = useState(false);
 
     // Initialize voice service
     useEffect(() => {
@@ -55,6 +56,8 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             setInterviewQuestions(questions);
         } else if (type === 'generate') {
             generateQuestions();
+        } else if (type === 'template' && questions) {
+            setInterviewQuestions(questions);
         }
     }, [questions, type]);
 
@@ -84,38 +87,49 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
 
     const speak = async (text: string) => {
         if (!voiceService) {
-            console.error('❌ No voice service available for speaking');
+            console.error('No voice service available for speaking');
             return;
         }
         
         try {
-            console.log('🗣️ Starting to speak:', text);
             setisSpeaking(true);
             setIsThinking(false);
             setMessages(prev => [...prev, { role: 'assistant', content: text }]);
             await voiceService.speak(text);
-            console.log('✅ Finished speaking');
             setisSpeaking(false);
             
-            // Wait a moment then start listening naturally (only if voice is not disabled)
+            // Check if this is the interview ending
+            if (text.includes('That completes our interview') || text.includes('Have a great day!')) {
+                return;
+            }
+            
+            // For template interviews, don't auto-start listening to avoid interference
+            // User will need to use Push to Talk button
+            if (type === 'template') {
+                return;
+            }
+            
+            // Wait a moment then start listening naturally (only for conversational interviews)
             if (callStatus === CallStatus.ACTIVE && !voiceDisabled) {
-                console.log('🤖 AI finished speaking, waiting for your response...');
                 setTimeout(() => {
-                    startListening();
-                }, 1000); // Just 1 second delay for natural flow
+                    if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) { // Add more checks
+                        startListening();
+                    }
+                }, 2000); // Increased delay from 1 to 2 seconds
             } else if (voiceDisabled) {
                 // If voice is disabled, show text input automatically
-                console.log('🤖 AI finished speaking, please use text input to respond...');
                 setShowTextInput(true);
             }
         } catch (error) {
-            console.error('❌ Error speaking:', error);
+            console.error('Error speaking:', error);
             setisSpeaking(false);
         }
     };
 
     const startListening = async () => {
-        if (!voiceService || callStatus !== CallStatus.ACTIVE || isListening) return;
+        if (!voiceService || callStatus !== CallStatus.ACTIVE || isListening) {
+            return;
+        }
         
         setIsListening(true);
         setIsThinking(false);
@@ -124,39 +138,27 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         setSpeechDetected(false);
         setCurrentTranscript('');
         
-        // Give immediate feedback that we're attempting to listen
-        console.log('🎤 Starting microphone... Please wait a moment then speak...');
-        
         try {
-            console.log('🎤 Ready to listen - please speak...');
             const transcript = await voiceService.startListening({
                 onAudioStart: () => {
-                    console.log('🎤 Callback: Audio input started');
                     setAudioDetected(true);
                 },
                 onSoundStart: () => {
-                    console.log('🎤 Callback: Sound detected');
                     setAudioDetected(true);
                 },
                 onSpeechStart: () => {
-                    console.log('🎤 Callback: Speech started');
                     setSpeechDetected(true);
                 },
                 onSpeechEnd: () => {
-                    console.log('🎤 Callback: Speech ended');
                     setSpeechDetected(false);
                 },
                 onTranscript: (text: string, isFinal: boolean) => {
-                    console.log('🎤 Callback: Transcript update:', text, isFinal ? '(final)' : '(interim)');
                     setCurrentTranscript(text);
                 }
             });
-            console.log('✅ You said:', transcript);
-            console.log('📊 Current state - isListening:', isListening, 'transcript length:', transcript.trim().length);
             
             // Process the transcript if we got meaningful input
-            if (transcript.trim().length > 1) {
-                console.log('🎤 Processing voice input:', transcript);
+            if (transcript.trim().length > 3) { // Increased minimum length from 1 to 3
                 setIsListening(false);
                 setIsThinking(true); // Show thinking while processing
                 setCurrentTranscript('');
@@ -165,14 +167,24 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                 setMessages(prev => [...prev, { role: 'user', content: transcript }]);
                 await handleUserAnswer(transcript);
             } else {
-                console.log('🎤 Transcript too short, not processing:', transcript);
                 setIsListening(false);
                 setCurrentTranscript('');
                 setAudioDetected(false);
                 setSpeechDetected(false);
+                
+                // If we get a very short transcript, wait a moment and try listening again
+                // This helps with cases where the voice service picks up brief noise
+                // But only for conversational interviews, not templates
+                if (callStatus === CallStatus.ACTIVE && !voiceDisabled && type !== 'template') {
+                    setTimeout(() => {
+                        if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) {
+                            startListening();
+                        }
+                    }, 2000);
+                }
             }
         } catch (error) {
-            console.error('❌ Error listening:', error);
+            console.error('Error listening:', error);
             setIsListening(false);
             setIsThinking(false);
             setCurrentTranscript('');
@@ -208,17 +220,59 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                     setSpeechError('Speech recognition failed. Please try again or use text input.');
                 }
             }
-            
-            // Don't auto-retry any errors - let user manually use Push to Talk
-            console.log('🎤 Please use the Push to Talk button to continue');
         }
     };
 
     const handleUserAnswer = async (answer: string) => {
+        // Prevent multiple simultaneous processing
+        if (isProcessingAnswer) {
+            return;
+        }
+        
         try {
-            console.log('🤖 AI is processing your response:', answer);
+            setIsProcessingAnswer(true);
             
-            // Track conversation flow
+            // Additional validation: Don't process very short answers (likely voice recognition errors)
+            if (answer.trim().length < 3) {
+                setIsThinking(false);
+                return;
+            }
+            
+            // Template-based interview logic
+            if (type === 'template' && interviewQuestions.length > 0) {
+                
+                // Check if this was the last question
+                if (currentQuestionIndex >= interviewQuestions.length - 1) {
+                    // All template questions completed
+                    const endingResponse = `${userName}, thank you so much for answering all the questions! That completes our interview. Your responses have been very insightful. We'll review your answers and get back to you soon. Have a great day!`;
+                    await speak(endingResponse);
+                    
+                    // Save interview and end immediately after speaking
+                    setTimeout(async () => {
+                        await saveInterview();
+                        setCallStatus(CallStatus.FINISHED);
+                    }, 3000); // Give time for the goodbye message to finish
+                    return;
+                }
+                
+                // Move to next question
+                const nextQuestionIndex = currentQuestionIndex + 1;
+                
+                // Update question index first
+                setCurrentQuestionIndex(nextQuestionIndex);
+                
+                // Add a small delay to ensure state updates
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Ask the next template question
+                const nextQuestion = interviewQuestions[nextQuestionIndex];
+                const questionText = `Thank you for that answer. Here's my next question: ${nextQuestion}`;
+                
+                await speak(questionText);
+                return;
+            }
+            
+            // Original conversational interview logic (for non-template interviews)
             setConversationCount(prev => prev + 1);
             
             // Check if we should end the interview (after 8-10 exchanges)
@@ -240,8 +294,7 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                 return;
             }
             
-            // New conversational approach - chat with AI like Gemini
-            console.log('🌐 Sending request to AI with:', { answer, messagesCount: messages.length });
+            // Conversational approach - chat with AI like Gemini
             const response = await fetch('/api/interview/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -257,14 +310,11 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                 })
             });
             
-            console.log('🌐 API Response status:', response.status);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const { response: aiResponse, success } = await response.json();
-            console.log('🤖 AI Response received:', { success, aiResponse });
             
             if (!success) {
                 throw new Error('API returned unsuccessful response');
@@ -275,11 +325,10 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             }
             
             // Speak the AI's conversational response
-            console.log('🗣️ About to speak AI response:', aiResponse);
             await speak(aiResponse);
             
         } catch (error) {
-            console.error('❌ Error processing answer:', error);
+            console.error('Error processing answer:', error);
             setIsThinking(false);
             
             // Fallback responses
@@ -291,59 +340,82 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             ];
             
             const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-            console.log('🗣️ Using fallback response:', randomResponse);
             await speak(randomResponse);
+        } finally {
+            setIsProcessingAnswer(false);
         }
     };
 
     // Save interview to Firebase
     const saveInterview = async () => {
         if (!userId || !interviewStartTime || isSavingInterview || interviewSaved) {
-            console.log('❌ Cannot save interview - missing data or already saving/saved');
             return;
         }
 
         try {
             setIsSavingInterview(true);
-            console.log('💾 Saving interview to Firebase...');
 
             const endTime = new Date();
             const durationMinutes = Math.round((endTime.getTime() - interviewStartTime.getTime()) / (1000 * 60));
 
-            // Extract technologies and role info from conversation
-            const conversationText = messages.map(msg => msg.content).join(' ').toLowerCase();
-            
-            // Default data that will be enhanced by AI analysis
-            const interviewData = {
-                userId: userId,
-                role: 'Software Developer', // AI will generate a better contextual name
-                level: 'Mid-level',
-                techstack: ['General'], // AI will extract actual technologies discussed
-                transcript: messages,
-                duration: durationMinutes,
-                interviewType: 'Technical'
-            };
+            // Handle template-based interviews differently
+            if (type === 'template' && templateId) {
+                // Save template response
+                const templateResponseData = {
+                    templateId: templateId,
+                    candidateName: userName,
+                    candidateEmail: localStorage.getItem('candidateEmail') || '',
+                    transcript: messages,
+                    duration: durationMinutes,
+                    completedAt: new Date().toISOString()
+                };
 
-            const response = await fetch('/api/interview/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(interviewData)
-            });
+                const response = await fetch(`/api/interview/template/${templateId}/responses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(templateResponseData)
+                });
 
-            const result = await response.json();
+                const result = await response.json();
 
-            if (result.success) {
-                console.log('✅ Interview saved successfully!', result);
-                console.log(`📝 AI-generated name: ${result.interviewName}`);
-                console.log(`🔧 Extracted technologies: ${result.extractedTechStack?.join(', ')}`);
-                console.log(`⭐ Score: ${result.score}/100`);
-                setInterviewSaved(true);
+                if (result.success) {
+                    setInterviewSaved(true);
+                    
+                    // Redirect to template feedback page immediately
+                    window.location.href = `/interview/${result.responseId}/template-feedback`;
+                } else {
+                    console.error('Failed to save template response:', result.error);
+                    alert('Failed to save your interview response. Please try again.');
+                }
             } else {
-                console.error('❌ Failed to save interview:', result.error);
+                // Regular interview save logic
+                const interviewData = {
+                    userId: userId,
+                    role: role || 'Software Developer',
+                    level: level || 'Mid-level',
+                    techstack: techstack || ['General'],
+                    transcript: messages,
+                    duration: durationMinutes,
+                    interviewType: interviewType || 'Technical'
+                };
+
+                const response = await fetch('/api/interview/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(interviewData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    setInterviewSaved(true);
+                } else {
+                    console.error('Failed to save interview:', result.error);
+                }
             }
 
         } catch (error) {
-            console.error('❌ Error saving interview:', error);
+            console.error('Error saving interview:', error);
         } finally {
             setIsSavingInterview(false);
         }
@@ -373,9 +445,8 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         // Test microphone access first
         try {
             await navigator.mediaDevices.getUserMedia({ audio: true });
-            console.log('✅ Microphone access granted');
         } catch (error) {
-            console.error('❌ Microphone access denied:', error);
+            console.error('Microphone access denied:', error);
             alert('Please allow microphone access to start the interview. Check your browser permissions.');
             return;
         }
@@ -391,14 +462,23 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         setConversationCount(0);
         setInterviewSaved(false);
         setIsSavingInterview(false);
+        setIsProcessingAnswer(false);
         
         try {
             setCallStatus(CallStatus.ACTIVE);
             setInterviewStartTime(new Date()); // Track interview start time
             
-            // Start with a natural greeting instead of following a script
-            const greeting = `Hello ${userName}! It's great to meet you. I'm excited to learn more about you and your experience. To get started, could you tell me a bit about yourself and what you're passionate about in software development?`;
-            await speak(greeting);
+            // Different greeting based on interview type
+            if (type === 'template' && interviewQuestions.length > 0) {
+                // Template-based interview: Start with structured introduction and first question
+                const templateGreeting = `Hello ${userName}! Welcome to your interview. I'll be asking you ${interviewQuestions.length} questions based on the ${role || 'position'} role at the ${level || 'level'} level. Please take your time with each answer. Let's begin with the first question: ${interviewQuestions[0]}`;
+                
+                await speak(templateGreeting);
+            } else {
+                // Regular conversational interview
+                const greeting = `Hello ${userName}! It's great to meet you. I'm excited to learn more about you and your experience. To get started, could you tell me a bit about yourself and what you're passionate about in software development?`;
+                await speak(greeting);
+            }
             
         } catch (error) {
             console.error('Error starting interview:', error);
@@ -421,6 +501,7 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
         setAudioDetected(false);
         setSpeechDetected(false);
         setCurrentTranscript('');
+        setIsProcessingAnswer(false);
         if (voiceService) {
             voiceService.stopSpeaking();
             voiceService.stopListening();
@@ -458,6 +539,11 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
            
            </div>
            <h3>AI Interviewer</h3>
+           {type === 'template' && (
+               <div className='text-xs text-blue-400 mt-1 px-2 py-1 bg-blue-900/30 rounded-full border border-blue-700'>
+                   📋 Template Mode
+               </div>
+           )}
         </div>
         <div className='card-border'>
             <div className='card-content'>
@@ -466,6 +552,26 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
             </div>
         </div>
     </div>
+
+    {/* Progress indicator for template interviews */}
+    {type === 'template' && interviewQuestions.length > 0 && callStatus === CallStatus.ACTIVE && (
+        <div className='w-full max-w-md mx-auto my-4'>
+            <div className='bg-gray-800 rounded-lg p-4'>
+                <div className='flex justify-between items-center mb-2'>
+                    <span className='text-sm text-gray-300'>Question Progress</span>
+                    <span className='text-sm text-blue-400 font-medium'>
+                        {currentQuestionIndex + 1} of {interviewQuestions.length}
+                    </span>
+                </div>
+                <div className='w-full bg-gray-700 rounded-full h-2'>
+                    <div 
+                        className='bg-blue-500 h-2 rounded-full transition-all duration-500'
+                        style={{ width: `${((currentQuestionIndex + 1) / interviewQuestions.length) * 100}%` }}
+                    ></div>
+                </div>
+            </div>
+        </div>
+    )}
     {messages.length > 0 && (
         <div className='transcript-border'>
             <div className='transcript'>
@@ -651,12 +757,10 @@ const Agent = ({userName,userId,type,questions}:AgentProps) => {
                                 setSpeechDetected(false);
                                 setCurrentTranscript('');
                                 
-                                console.log('🧪 Testing microphone and voice recognition...');
                                 const result = await voiceService.testMicrophone();
-                                console.log('✅ Voice test successful:', result);
                                 alert(result);
                             } catch (error) {
-                                console.error('❌ Voice test failed:', error);
+                                console.error('Voice test failed:', error);
                                 const errorMsg = error instanceof Error ? error.message : 'Voice test failed';
                                 setSpeechError(errorMsg);
                                 alert(`Voice test failed: ${errorMsg}`);

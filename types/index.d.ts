@@ -78,8 +78,13 @@ interface AgentProps {
   userId?: string;
   interviewId?: string;
   feedbackId?: string;
-  type: "generate" | "interview";
+  type: "generate" | "interview" | "template";
   questions?: string[];
+  templateId?: string;
+  role?: string;
+  level?: string;
+  techstack?: string[];
+  interviewType?: string;
 }
 
 interface RouteParams {
@@ -149,4 +154,93 @@ interface CreateAssistantDTO {
       content: string;
     }>;
   };
+}
+
+// Interview Template Interfaces
+interface InterviewTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  role: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  type: string[]; // Can have multiple types: Technical, Leadership, Sales, Behavioral, Product
+  techstack: string[];
+  duration?: number; // in minutes - optional for templates since they end when questions are completed
+  questionCount: number;
+  questions: string[];
+  isPublic: boolean;
+  createdBy: string; // userId
+  createdAt: string;
+  updatedAt: string;
+  shareableLink: string;
+  completionCount: number;
+  averageScore?: number;
+}
+
+interface TemplateQuestion {
+  id: string;
+  content: string;
+  category: string;
+  order: number;
+  isCustom: boolean; // true if written by user, false if AI-generated
+}
+
+interface CreateTemplateRequest {
+  name: string;
+  description?: string;
+  role: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  type: string[];
+  techstack: string[];
+  questionCount: number;
+  questions?: string[]; // Optional custom questions
+  isPublic?: boolean;
+  generateQuestions?: boolean; // If true, AI will generate questions
+}
+
+interface TemplateResponse {
+  id: string;
+  templateId: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  completedAt: string;
+  duration: number;
+  score?: number;
+  transcript: { role: string; content: string }[];
+  feedback?: {
+    totalScore: number;
+    categoryScores: Array<{
+      name: string;
+      score: number;
+      comment: string;
+    }>;
+    strengths: string[];
+    areasForImprovement: string[];
+    finalAssessment: string;
+  };
+}
+
+interface TemplateStats {
+  totalResponses: number;
+  averageScore: number;
+  averageDuration: number;
+  completionRate: number;
+  lastCompleted?: string;
+}
+
+interface TemplateCardProps {
+  template: InterviewTemplate;
+  showStats?: boolean;
+  isOwner?: boolean;
+}
+
+interface TemplateBuilderProps {
+  template?: InterviewTemplate; // For editing existing templates
+  onSave?: (template: InterviewTemplate) => void;
+}
+
+interface CandidateSessionProps {
+  templateId: string;
+  candidateName?: string;
+  candidateEmail?: string;
 }

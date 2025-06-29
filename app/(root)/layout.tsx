@@ -15,7 +15,13 @@ const RootLayout = async({children}:{children:ReactNode}) => {
           <Image src="/logo.svg" alt="Logo" height={32} width={38} />
           <h2 className='text-primary-100'>HireVox </h2>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          <Link 
+            href="/create-template" 
+            className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          >
+            Create Template
+          </Link>
           <Link 
             href="/profile" 
             className="text-gray-600 hover:text-gray-900 transition-colors"
