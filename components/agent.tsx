@@ -35,6 +35,8 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
     const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
     const [isConversational, setIsConversational] = useState(true); // New conversational mode
     const [conversationCount, setConversationCount] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
+    const [pushToTalkMode, setPushToTalkMode] = useState(false);
     
     // Interview tracking
     const [interviewStartTime, setInterviewStartTime] = useState<Date | null>(null);
@@ -42,11 +44,20 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
     const [interviewSaved, setInterviewSaved] = useState(false);
     const [isProcessingAnswer, setIsProcessingAnswer] = useState(false);
 
-    // Initialize voice service
+    // Initialize voice service and detect mobile
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const service = new FreeVoiceService();
             setVoiceService(service);
+            
+            // Detect mobile device
+            const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            setIsMobile(mobileCheck);
+            
+            // Enable push-to-talk mode by default on mobile for better reliability
+            if (mobileCheck) {
+                setPushToTalkMode(true);
+            }
         }
     }, []);
 
@@ -193,6 +204,24 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             
             // Check network status
             const networkStatus = voiceService.getNetworkStatus();
+            
+            // Mobile-specific error handling
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            let errorMessage = (error as Error).message;
+            
+            if (isMobile) {
+                if (errorMessage.includes('not-allowed') || errorMessage.includes('permission')) {
+                    errorMessage = 'Microphone permission needed. Please allow microphone access in your browser settings.';
+                } else if (errorMessage.includes('no-speech')) {
+                    errorMessage = 'No speech detected. Please speak closer to your device\'s microphone.';
+                } else if (errorMessage.includes('audio-capture')) {
+                    errorMessage = 'Cannot access microphone. Please check if another app is using it.';
+                } else if (errorMessage.includes('timeout')) {
+                    errorMessage = 'Speech recognition timed out. Please try speaking again or use text input.';
+                }
+            }
+            
+            setSpeechError(errorMessage);
             
             // Only disable voice after multiple failures (not just network issues)
             if (networkStatus.issueCount >= 4) {
@@ -442,12 +471,25 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             return;
         }
 
-        // Test microphone access first
+        // Test microphone access first with mobile-specific handling
         try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Request microphone permission using the voice service
+            const permissionGranted = await voiceService.requestMicrophonePermission();
+            if (!permissionGranted) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const errorMsg = isMobile 
+                    ? 'Please allow microphone access in your browser settings. On mobile devices, you may need to tap the microphone icon in your browser\'s address bar and select "Allow".'
+                    : 'Please allow microphone access to start the interview. Check your browser permissions.';
+                alert(errorMsg);
+                return;
+            }
         } catch (error) {
             console.error('Microphone access denied:', error);
-            alert('Please allow microphone access to start the interview. Check your browser permissions.');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const errorMsg = isMobile 
+                ? 'Microphone permission is required for voice input. Please check your browser settings and ensure microphone access is allowed for this website.'
+                : 'Please allow microphone access to start the interview. Check your browser permissions.';
+            alert(errorMsg);
             return;
         }
 
@@ -589,6 +631,11 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 <div className='w-3 h-3 max-sm:w-4 max-sm:h-4 bg-red-500 rounded-full'></div>
                 <span className='text-sm max-sm:text-base text-red-800 dark:text-red-200'>❌ {speechError}</span>
             </div>
+            {isMobile && (
+                <div className='text-xs max-sm:text-sm text-gray-600 dark:text-gray-400 text-center max-sm:px-4'>
+                    💡 Mobile Tips: Ensure microphone permission is granted • Speak closer to your device • Use headphones for better audio quality
+                </div>
+            )}
             <button 
                 className='px-4 py-2 max-sm:px-6 max-sm:py-3 max-sm:text-lg bg-gray-600 text-white rounded-lg max-sm:rounded-xl hover:bg-gray-700'
                 onClick={() => setShowTextInput(!showTextInput)}
@@ -676,9 +723,14 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 </div>
             )}
             
-            <div className='text-xs text-gray-500 text-center'>
-                Speak clearly and take your time • Orange dot = mic active • Blue dot = speech detected<br/>
-                You can speak for up to 30 seconds • Natural pauses are OK
+            <div className='text-xs text-gray-500 text-center max-sm:text-sm max-sm:px-4'>
+                {isMobile 
+                    ? 'Mobile Mode: Push the "🎤 Push to Talk" button to speak • Orange dot = mic active • Blue dot = speech detected'
+                    : 'Speak clearly and take your time • Orange dot = mic active • Blue dot = speech detected'}
+                <br/>
+                You can speak for up to {isMobile ? '15' : '30'} seconds • Natural pauses are OK
+                {isMobile && <br/>}
+                {isMobile && 'Tip: Hold device at arm\'s length for better voice recognition'}
             </div>
         </div>
     )}
@@ -734,7 +786,7 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                             startListening();
                         }}
                     >
-                        🎤 {speechError ? 'Try Voice Again' : 'Push to Talk'}
+                        🎤 {speechError ? 'Try Voice Again' : isMobile ? 'Tap to Speak' : 'Push to Talk'}
                     </button>
                 )}
                 {voiceDisabled && (

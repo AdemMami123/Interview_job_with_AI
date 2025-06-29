@@ -5,20 +5,38 @@ export class FreeVoiceService {
     private isListening = false;
     private isSpeaking = false;
     private networkIssueCount = 0;
-    private maxNetworkRetries = 3; // Increased from 2 to 3
+    private maxNetworkRetries = 3;
+    private isMobile = false;
+    private microphonePermissionGranted = false;
 
     constructor() {
         if (typeof window !== 'undefined') {
+            // Detect mobile device
+            this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            console.log('📱 Device type:', this.isMobile ? 'Mobile' : 'Desktop');
+            
             // Initialize Speech Recognition
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (SpeechRecognition) {
                 this.recognition = new SpeechRecognition();
-                this.recognition.continuous = true; // Changed to true for better detection
-                this.recognition.interimResults = true; // Changed to true for better detection
+                
+                // Mobile-specific configuration
+                if (this.isMobile) {
+                    this.recognition.continuous = false; // Better for mobile
+                    this.recognition.interimResults = false; // More reliable on mobile
+                    console.log('📱 Mobile speech recognition configured: continuous=false, interimResults=false');
+                } else {
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+                    console.log('🖥️ Desktop speech recognition configured: continuous=true, interimResults=true');
+                }
+                
                 this.recognition.lang = 'en-US';
                 this.recognition.maxAlternatives = 1;
                 
-                console.log('🎤 Speech recognition initialized with continuous=true, interimResults=true');
+                console.log('🎤 Speech recognition initialized');
+            } else {
+                console.error('❌ Speech recognition not supported in this browser');
             }
 
             // Initialize Speech Synthesis
@@ -26,7 +44,40 @@ export class FreeVoiceService {
         }
     }
 
-    // Start listening for user speech with better network error handling
+    // Request microphone permissions explicitly (especially important for mobile)
+    async requestMicrophonePermission(): Promise<boolean> {
+        try {
+            console.log('🎤 Requesting microphone permission...');
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    ...(this.isMobile && {
+                        sampleRate: 16000, // Lower sample rate for mobile
+                        channelCount: 1 // Mono for mobile
+                    })
+                } 
+            });
+            
+            console.log('✅ Microphone permission granted');
+            this.microphonePermissionGranted = true;
+            
+            // Stop the stream after getting permission
+            stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('🛑 Audio track stopped after permission check');
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Microphone permission denied or not available:', error);
+            this.microphonePermissionGranted = false;
+            return false;
+        }
+    }
+
+    // Start listening for user speech with better mobile support
     startListening(callbacks?: {
         onAudioStart?: () => void;
         onSoundStart?: () => void;
@@ -34,11 +85,21 @@ export class FreeVoiceService {
         onSpeechEnd?: () => void;
         onTranscript?: (transcript: string, isFinal: boolean) => void;
     }): Promise<string> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             if (!this.recognition) {
                 console.error('❌ Speech recognition not supported in this browser');
                 reject(new Error('Speech recognition not supported'));
                 return;
+            }
+
+            // For mobile devices, ensure microphone permission first
+            if (this.isMobile && !this.microphonePermissionGranted) {
+                console.log('📱 Mobile device detected, requesting microphone permission...');
+                const permissionGranted = await this.requestMicrophonePermission();
+                if (!permissionGranted) {
+                    reject(new Error('Microphone permission required for voice input on mobile devices'));
+                    return;
+                }
             }
 
             // If already listening, stop the current session first
@@ -46,14 +107,16 @@ export class FreeVoiceService {
                 console.log('🛑 Already listening, stopping previous session...');
                 this.recognition.stop();
                 this.isListening = false;
-                // Wait a bit before starting new session
+                // Longer wait for mobile devices
+                const waitTime = this.isMobile ? 1500 : 800;
                 setTimeout(() => {
                     this.startListening(callbacks).then(resolve).catch(reject);
-                }, 800);
+                }, waitTime);
                 return;
             }
 
             console.log('🎤 Initializing speech recognition...');
+            console.log('🎤 Device type:', this.isMobile ? 'Mobile' : 'Desktop');
             console.log('🎤 Network issue count:', this.networkIssueCount);
             
             this.isListening = true;
@@ -63,15 +126,19 @@ export class FreeVoiceService {
             let silenceTimer: NodeJS.Timeout;
             let finalTranscript = '';
 
-            // Set a longer timeout for speech detection
+            // Mobile devices get shorter timeout, desktop gets longer
+            const timeout = this.isMobile ? 15000 : 30000; // 15s mobile, 30s desktop
             timeoutId = setTimeout(() => {
                 if (this.isListening && !hasResult) {
-                    console.log('⏰ Speech recognition timeout after 30 seconds');
+                    console.log(`⏰ Speech recognition timeout after ${timeout/1000} seconds`);
                     this.recognition.stop();
                     this.isListening = false;
-                    reject(new Error('Speech recognition timeout - please try again'));
+                    const errorMsg = this.isMobile 
+                        ? 'No speech detected. Please speak closer to your microphone and ensure permissions are granted.'
+                        : 'Speech recognition timeout - please try again';
+                    reject(new Error(errorMsg));
                 }
-            }, 600000); // Increased to 30 seconds for longer responses
+            }, timeout);
 
             this.recognition.onresult = (event: any) => {
                 console.log('🎤 OnResult triggered with', event.results.length, 'results');
