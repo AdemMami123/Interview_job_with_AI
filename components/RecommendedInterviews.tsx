@@ -61,9 +61,9 @@ const RecommendedInterviews: React.FC<RecommendedInterviewsProps> = ({
     return (
       <div className="text-center py-8 bg-gray-900 border border-gray-700 rounded-lg">
         <div className="space-y-3">
-          <h3 className="text-lg font-medium text-white">No Recommendations Yet</h3>
+          <h3 className="text-lg font-medium text-white">Getting Recommendations Ready</h3>
           <p className="text-gray-400 text-sm max-w-md mx-auto">
-            Complete a few interviews to get personalized recommendations based on your skills and performance.
+            We're preparing personalized interview recommendations for you. Complete an interview to unlock skill-based suggestions!
           </p>
           <Button asChild className="mt-4">
             <Link href="/interview">Start Your First Interview</Link>

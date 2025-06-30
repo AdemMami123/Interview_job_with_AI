@@ -195,10 +195,10 @@ const page = () => {
     fetchUserInterviews();
   }, [currentUserId]);
 
-  // Fetch recommendations when user is authenticated and has completed interviews
+  // Fetch recommendations for all users (authenticated and anonymous)
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (!currentUserId || !isAuthenticated) return;
+      if (!currentUserId) return;
 
       try {
         setRecommendationsLoading(true);
@@ -220,14 +220,14 @@ const page = () => {
       }
     };
 
-    // Only fetch recommendations if user has completed at least one interview
-    if (currentUserId && userInterviews.length > 0) {
+    // Fetch recommendations for all users
+    if (currentUserId) {
       fetchRecommendations();
     } else {
       setRecommendations([]);
       setRecommendationsLoading(false);
     }
-  }, [currentUserId, isAuthenticated, userInterviews.length]);
+  }, [currentUserId]);
 
   // Function to change user name (for non-authenticated users)
   const handleNameChange = () => {
@@ -341,46 +341,21 @@ const page = () => {
       <section className="flex flex-col gap-6 mt-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2>
-              {isAuthenticated && userInterviews.length > 0
-                ? "Recommended Interviews Based on Your Skills"
-                : "Start a New Interview"}
-            </h2>
-            {isAuthenticated && userInterviews.length > 0 && (
-              <p className="text-sm text-gray-400 mt-1">
-                Personalized recommendations based on your interview history and performance
-              </p>
-            )}
+            <h2>Recommended Interviews Based on Your Skills</h2>
+            <p className="text-sm text-gray-400 mt-1">
+              Personalized recommendations based on your interview history and performance
+            </p>
           </div>
-          {isAuthenticated && userInterviews.length > 0 && (
-            <Button asChild variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-              <Link href="/interview">Quick Start</Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+            <Link href="/interview">Quick Start</Link>
+          </Button>
         </div>
         
-        {isAuthenticated && userInterviews.length > 0 ? (
-          <RecommendedInterviews 
-            recommendations={recommendations}
-            isLoading={recommendationsLoading}
-            userSkillProfile={userSkillProfile}
-          />
-        ) : (
-          <>
-            {!isAuthenticated && (
-              <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mb-4">
-                <p className="text-blue-300 text-sm">
-                  💡 <strong>Tip:</strong> Sign in to get personalized interview recommendations based on your skills and performance history.
-                </p>
-              </div>
-            )}
-            <div className="interviews-section">
-              {practiceTemplates.map((template) => (
-                <InterviewCard {...template} key={template.id} />
-              ))}
-            </div>
-          </>
-        )}
+        <RecommendedInterviews 
+          recommendations={recommendations}
+          isLoading={recommendationsLoading}
+          userSkillProfile={userSkillProfile}
+        />
       </section>
     </>
   );

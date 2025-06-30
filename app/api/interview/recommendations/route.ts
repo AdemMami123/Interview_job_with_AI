@@ -265,6 +265,22 @@ function generateRecommendations(
     return [];
   }
 
+  // If user has no interviews, provide default beginner recommendations
+  if (userInterviews.length === 0) {
+    console.log('👋 New user - providing beginner recommendations');
+    return availableTemplates
+      .filter(template => template.level === 'Beginner' || template.level === 'Intermediate')
+      .slice(0, limit)
+      .map((template, index) => ({
+        ...template,
+        recommendationScore: 80 - (index * 5), // Descending scores
+        reasons: ['Perfect for beginners', 'Start your journey'],
+        category: 'beginner_friendly',
+        rank: index + 1,
+        confidence: 0.8
+      }));
+  }
+
   // Recommendation categories with priorities
   const categories = [
     {
@@ -303,11 +319,8 @@ function generateRecommendations(
       return;
     }
 
-    let score = 0;
+    let score = 20; // Higher base score to ensure recommendations
     let reasons: string[] = [];
-
-    // Base score for any available template
-    score += 10;
 
     // Skill improvement recommendations
     if (skillProfile.improvementAreas && Array.isArray(skillProfile.improvementAreas) && skillProfile.improvementAreas.length > 0) {
@@ -332,7 +345,7 @@ function generateRecommendations(
       ).length;
       
       if (techOverlap > 0) {
-        score += 25 * (techOverlap / template.techstack.length);
+        score += 25 * (techOverlap / Math.max(template.techstack.length, 1));
         if (techOverlap >= 2) {
           reasons.push('Matches your experience');
         } else if (techOverlap >= 1) {
@@ -341,27 +354,27 @@ function generateRecommendations(
       }
     }
 
-    // Level progression
+    // Level progression - more forgiving matching
     const levelProgression: Record<string, Record<string, number>> = {
-      'Beginner': { 'Intermediate': 20, 'Advanced': 5, 'Beginner': 15 },
-      'Mid-level': { 'Intermediate': 25, 'Advanced': 15, 'Beginner': 10 },
-      'Intermediate': { 'Advanced': 20, 'Mid-level': 15, 'Beginner': 5, 'Intermediate': 20 },
-      'Senior': { 'Advanced': 25, 'Intermediate': 10, 'Senior': 20 },
-      'Advanced': { 'Advanced': 15, 'Intermediate': 5, 'Senior': 10 }
+      'Beginner': { 'Intermediate': 25, 'Advanced': 10, 'Beginner': 20 },
+      'Mid-level': { 'Intermediate': 30, 'Advanced': 20, 'Beginner': 15, 'Mid-level': 25 },
+      'Intermediate': { 'Advanced': 25, 'Mid-level': 20, 'Beginner': 10, 'Intermediate': 25 },
+      'Senior': { 'Advanced': 30, 'Intermediate': 15, 'Senior': 25 },
+      'Advanced': { 'Advanced': 20, 'Intermediate': 10, 'Senior': 15 }
     };
 
     const userLevelMapping = levelProgression[skillProfile.experienceLevel] || levelProgression['Mid-level'];
-    const progressionScore = userLevelMapping[template.level] || 5; // Give some points to any level
+    const progressionScore = userLevelMapping[template.level] || 15; // Higher fallback score
     score += progressionScore;
 
-    if (progressionScore >= 15) {
+    if (progressionScore >= 20) {
       reasons.push(template.level === 'Advanced' ? 'Challenge yourself' : 'Perfect for your level');
     }
 
-    // Trending/popular templates
+    // Trending/popular templates - more generous
     const completionCount = template.completionCount || 0;
-    if (completionCount > 10) { // Lowered threshold
-      score += Math.min(15, completionCount / 5); // Scale score with popularity
+    if (completionCount > 5) { // Lower threshold
+      score += Math.min(20, completionCount / 3); // More generous scaling
       reasons.push('Popular choice');
     }
 
@@ -369,12 +382,12 @@ function generateRecommendations(
     if (template.type && skillProfile.preferredType) {
       if (Array.isArray(template.type)) {
         if (template.type.includes(skillProfile.preferredType)) {
-          score += 10;
+          score += 15;
           reasons.push('Matches your preferred style');
         }
       } else if (typeof template.type === 'string') {
         if (template.type === skillProfile.preferredType) {
-          score += 10;
+          score += 15;
           reasons.push('Matches your preferred style');
         }
       }
@@ -388,8 +401,8 @@ function generateRecommendations(
         !skillProfile.dominantTechStack.includes(tech)
       ).length;
       
-      if (newTechCount > 0 && newTechCount <= 3) { // Increased range
-        score += Math.min(10, newTechCount * 3);
+      if (newTechCount > 0 && newTechCount <= 4) { // Increased range
+        score += Math.min(15, newTechCount * 4);
         reasons.push('Explore new technologies');
       }
     }
@@ -397,21 +410,29 @@ function generateRecommendations(
     // Performance-based adjustments
     if (skillProfile.averageScore >= 80) {
       // High performers get more challenging recommendations
-      if (template.level === 'Advanced' || template.level === 'Senior') score += 10;
+      if (template.level === 'Advanced' || template.level === 'Senior') score += 15;
     } else if (skillProfile.averageScore < 60) {
       // Lower performers get level-appropriate content
-      if (template.level === 'Beginner' || template.level === 'Intermediate') score += 10;
+      if (template.level === 'Beginner' || template.level === 'Intermediate') score += 15;
     }
 
-    // Always include some recommendations even with low scores
-    if (score < 20 && recommendations.length < limit / 2) {
-      score += 15; // Boost score to ensure variety
-      reasons.push('Expand your skills');
+    // Ensure variety by boosting scores for templates not yet recommended
+    if (recommendations.length < limit) {
+      score += 10; // Boost to ensure we get enough recommendations
+    }
+
+    // Add default reasons if none exist
+    if (reasons.length === 0) {
+      reasons.push('Expand your skillset');
+      if (template.level) {
+        reasons.push(`${template.level} level challenge`);
+      }
     }
 
     console.log(`📊 Template "${template.name}" scored: ${score}, reasons:`, reasons);
 
-    if (score > 0) {
+    // Lower threshold to ensure more recommendations
+    if (score >= 20) {
       recommendations.push({
         ...template,
         recommendationScore: Math.min(score, 100),
@@ -424,7 +445,7 @@ function generateRecommendations(
   console.log(`🎯 Generated ${recommendations.length} recommendations before sorting`);
 
   // Sort by recommendation score and return top results
-  const finalRecommendations = recommendations
+  let finalRecommendations = recommendations
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit)
     .map((rec, index) => ({
@@ -432,6 +453,28 @@ function generateRecommendations(
       rank: index + 1,
       confidence: Math.min(rec.recommendationScore / 100, 1)
     }));
+
+  // Fallback: If we still don't have enough recommendations, add some random popular templates
+  if (finalRecommendations.length < Math.min(limit, 3)) {
+    console.log('🔄 Adding fallback recommendations due to insufficient results');
+    
+    const fallbackTemplates = availableTemplates
+      .filter(template => !completedTemplateIds.has(template.id))
+      .filter(template => !finalRecommendations.some(rec => rec.id === template.id))
+      .sort((a, b) => (b.completionCount || 0) - (a.completionCount || 0))
+      .slice(0, limit - finalRecommendations.length);
+
+    const fallbackRecommendations = fallbackTemplates.map((template, index) => ({
+      ...template,
+      recommendationScore: 50 - (index * 5), // Moderate scores for fallbacks
+      reasons: ['Popular template', 'Broaden your experience'],
+      category: 'trending',
+      rank: finalRecommendations.length + index + 1,
+      confidence: 0.5
+    }));
+
+    finalRecommendations = [...finalRecommendations, ...fallbackRecommendations];
+  }
 
   console.log(`✨ Final recommendations:`, finalRecommendations.map(r => ({
     name: r.name,
