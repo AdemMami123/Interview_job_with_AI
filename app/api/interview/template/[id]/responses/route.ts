@@ -173,9 +173,14 @@ ANALYSIS INSTRUCTIONS:
    - Intermediate: Expect solid fundamentals and some practical experience
    - Advanced: Require deep expertise and extensive real-world application
 
-3. TEMPLATE-SPECIFIC EVALUATION: Consider the template's focus areas (${templateData.type.join(', ')}) and required competencies
+4. MEANINGFUL INTERVIEW NAMING: Generate a specific, descriptive interview name based on the actual conversation content:
+   - Analyze what topics were genuinely discussed during the interview
+   - Focus on specific technical areas, concepts, or challenges that emerged
+   - Include the candidate name if provided, but make the focus on content
+   - Examples: "Sarah's React & TypeScript Development Assessment", "Frontend Component Architecture Discussion - Mike", "Database Design & API Integration Review - Anna"
+   - If no specific technical topics emerged, use conversational themes: "Technical Foundation Assessment - John", "Software Development Experience Review - Maria"
 
-4. COMPREHENSIVE FEEDBACK: Provide specific, actionable insights based on actual responses and template requirements
+5. COMPREHENSIVE FEEDBACK: Provide specific, actionable insights based on actual responses and template requirements
 
 Please provide evaluation in this JSON format:
 {
@@ -198,6 +203,13 @@ Please provide evaluation in this JSON format:
     "recommendedNext": "Suggested next steps"
   }
 }
+
+INTERVIEW NAME REQUIREMENTS:
+- The interview name MUST reflect what was actually discussed during the conversation
+- DO NOT just combine candidate name with template role (e.g., "John's Frontend Assessment")
+- Analyze the actual conversation topics and create a meaningful title
+- Examples of GOOD names: "Sarah's React Component Design Discussion", "Frontend State Management & Performance - Mike", "Database Integration & API Development Review - Anna"
+- Examples of BAD names: "John's Frontend Assessment", "Technical Interview - Sarah", "Software Engineer Evaluation - Mike"
 
 IMPORTANT: Base scores on actual response quality relative to the ${templateData.level} level expectations. Provide specific reasoning for each score based on observed competencies and response quality. Conservative scoring ensures credible assessments.`;
 

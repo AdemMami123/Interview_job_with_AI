@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getRandomInterviewCover } from "@/lib/utils";
 import DisplayTechIcons from "./DisplayTechIcons";
 import dayjs from "dayjs";
 
@@ -99,7 +98,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 
         <div className="flex flex-col items-center">
           <Image
-            src={getRandomInterviewCover()}
+            src="/ai-avatar.png"
             alt="template cover"
             width={90}
             height={90}

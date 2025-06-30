@@ -1,4 +1,3 @@
-import { getRandomInterviewCover } from "@/lib/utils";
 import { generateText } from "ai";
 import { db } from "@/firebase/admin";
 import { google } from "@ai-sdk/google";
@@ -32,7 +31,7 @@ export async function POST(request:Request){
             questions:JSON.parse(questions),
             userId:userid,
             finalized:true,
-            coverImage:getRandomInterviewCover(),
+            coverImage:"/ai-avatar.png",
             createdAt:new Date().toISOString(),
 
         }

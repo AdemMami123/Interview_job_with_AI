@@ -81,10 +81,13 @@ ANALYSIS INSTRUCTIONS:
    - Relevance: Does the answer directly address the question?
    - Examples: Are concrete, relevant examples provided?
 
-3. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
-   - Focus on main technologies and concepts covered
-   - Include specific areas like "State Management", "Database Design", "API Development"
-   - Examples: "React State Management Deep Dive", "Database Design & Optimization", "Full-Stack Authentication Implementation"
+3. CONTEXTUAL NAMING: Generate a highly specific, descriptive interview name based on the ACTUAL conversation topics:
+   - Analyze what was genuinely discussed during the interview, not just the job role
+   - Focus on specific technical concepts, challenges, or projects mentioned
+   - Include specific technologies and areas that came up in conversation
+   - Make it sound like a meaningful interview session title
+   - Examples: "React Hooks & State Management Discussion", "Database Optimization & Node.js APIs", "Full-Stack Authentication & Security Patterns", "Frontend Performance & Component Architecture", "Microservices Design & Docker Deployment"
+   - If no specific technical topics were discussed, use conversational themes like "Software Development Experience & Career Goals", "Technical Problem-Solving & Project Experience"
 
 4. CRITICAL TECH EXTRACTION: Carefully analyze the transcript and extract ONLY technologies that were actually mentioned, discussed, or referenced during the conversation:
    - Programming languages (JavaScript, Python, Java, TypeScript, etc.)
@@ -123,6 +126,14 @@ SCORING RATIONALE: For each category score, provide specific reasoning:
 - Which answers were strong/weak and why?
 - What evidence supports this assessment?
 
+INTERVIEW NAME REQUIREMENTS: 
+- The interview name MUST be specific to what was actually discussed
+- DO NOT just use the job role (e.g., "Frontend Developer") as the name
+- Analyze the conversation and identify the main technical topics that came up
+- Create a descriptive title that someone reading it would understand what was covered
+- Examples of GOOD names: "React Component Lifecycle & Hooks Discussion", "API Design & Database Optimization", "Authentication & Security Implementation"
+- Examples of BAD names: "Frontend Developer", "Software Engineer", "Technical Interview"
+
 IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Low-quality, vague, or incorrect answers should receive appropriately low scores (50s-60s). Average performance should score in the 70s. Only exceptional, detailed, and accurate responses should score 85+.
 
 Respond with only the JSON, no additional text.`;
@@ -157,7 +168,7 @@ Respond with only the JSON, no additional text.`;
             
             // Enhanced fallback analysis with more conservative default values
             analysis = {
-                interviewName: `${role} Technical Interview - ${new Date().toLocaleDateString()}`,
+                interviewName: `${role} Interview - ${extractedFromTranscript.length > 0 ? extractedFromTranscript.slice(0, 2).join(' & ') + ' Focus' : 'General Technical Discussion'}`,
                 extractedTechStack: extractedFromTranscript.length > 0 ? extractedFromTranscript : [],
                 totalScore: 65, // More conservative default - represents "Fair" performance
                 categoryScores: [
@@ -187,7 +198,8 @@ Respond with only the JSON, no additional text.`;
         const interviewData: Interview = {
             id: interviewId,
             userId: userId,
-            role: analysis.interviewName, // Use AI-generated contextual name
+            role: role, // Keep original role
+            interviewName: analysis.interviewName, // Use AI-generated contextual name
             level: level || 'Mid-level',
             type: interviewType || 'Technical',
             techstack: techstack || [], // Keep original tech stack

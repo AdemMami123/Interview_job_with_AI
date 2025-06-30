@@ -87,10 +87,13 @@ ANALYSIS INSTRUCTIONS:
 2. LEVEL-BASED EXPECTATIONS: Calibrate scoring based on template level (${templateData.level})
 3. EVIDENCE-BASED SCORING: Each score must be supported by specific response evidence
 
-2. CONTEXTUAL NAMING: Generate a specific, descriptive assessment title based on actual topics discussed:
-   - Focus on main technologies and concepts covered
-   - Include specific areas like "React Component Design", "Database Optimization", "System Architecture"
-   - Examples: "React State Management Assessment", "Node.js API Development Evaluation", "Full-Stack Architecture Review"
+2. CONTEXTUAL NAMING: Generate a highly specific, descriptive assessment title based on the ACTUAL conversation content:
+   - Analyze what was genuinely discussed during the interview, not just the template setup
+   - Focus on specific technical topics, concepts, or challenges that emerged in responses
+   - Include technologies and areas that were actually covered in the conversation
+   - Make it descriptive of the actual interview session
+   - Examples: "React Component Architecture & Hooks Assessment", "Backend API Design & Database Integration", "Full-Stack Development & Security Practices", "Frontend Performance & State Management", "System Design & Scalability Discussion"
+   - If no specific topics were discussed in depth, use themes like "Technical Foundation & Problem-Solving Assessment", "Software Development Experience Review"
 
 3. TECH EXTRACTION: Extract ALL technologies mentioned during the conversation:
    - Programming languages (JavaScript, Python, Java, etc.)
@@ -120,6 +123,12 @@ Please provide your evaluation in this JSON format:
     "recommendedNext": "Suggested next steps or areas to focus on"
   }
 }
+
+ASSESSMENT TITLE REQUIREMENTS:
+- The title MUST reflect what was actually discussed, not just the template name
+- Analyze the conversation and create a descriptive assessment title based on topics covered
+- Examples of GOOD titles: "React State Management & Component Design Assessment", "Backend API Development & Database Integration", "Frontend Performance & User Experience Review"
+- Examples of BAD titles: "Frontend Developer Assessment", "Technical Interview", "Software Engineer Evaluation"
 
 IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Use conservative scoring - only exceptional responses should score 85+. Typical good responses should score in the 70s. Poor or vague responses should receive scores in the 50s-60s.
 

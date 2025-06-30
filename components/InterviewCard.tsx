@@ -1,7 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
-import { getRandomInterviewCover } from "@/lib/utils";
 import Link from "next/link";
 import DisplayTechIcons from "./DisplayTechIcons";
 
@@ -45,6 +44,7 @@ const InterviewCard = ({
   type,
   techstack,
   extractedTechStack,
+  interviewName,
   createdAt,
   completedAt,
   score,
@@ -63,16 +63,6 @@ const InterviewCard = ({
   const displayTechStack = extractedTechStack && extractedTechStack.length > 0 
     ? extractedTechStack 
     : techstack;
-  
-  // Debug logging for tech stack display
-  console.log('InterviewCard Debug:', {
-    id,
-    role,
-    originalTechstack: techstack,
-    extractedTechStack,
-    displayTechStack,
-    completed
-  });
   
   // Enhanced description based on performance
   const getInterviewDescription = () => {
@@ -95,6 +85,47 @@ const InterviewCard = ({
     }
   };
   
+  // Generate a meaningful name based on content and completion status
+  const getDisplayName = () => {
+    // Priority 1: Use AI-generated contextual name for completed interviews
+    if (completed && interviewName && interviewName !== role) {
+      return interviewName;
+    } 
+    
+    // Priority 2: Generate name based on extracted tech stack if no AI name available
+    if (completed && extractedTechStack && extractedTechStack.length > 0) {
+      const mainTechs = extractedTechStack.slice(0, 2).join(' & ');
+      
+      // Create more specific naming based on tech stack and role
+      if (extractedTechStack.includes('React') && extractedTechStack.includes('Node.js')) {
+        return `Full-Stack ${mainTechs} Interview`;
+      } else if (extractedTechStack.some(tech => ['React', 'Vue', 'Angular', 'Next.js'].includes(tech))) {
+        return `Frontend ${mainTechs} Interview`;
+      } else if (extractedTechStack.some(tech => ['Node.js', 'Express', 'Python', 'Django', 'FastAPI'].includes(tech))) {
+        return `Backend ${mainTechs} Interview`;
+      } else if (extractedTechStack.some(tech => ['MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Prisma'].includes(tech))) {
+        return `Database & ${mainTechs} Interview`;
+      } else if (extractedTechStack.some(tech => ['Docker', 'AWS', 'Azure', 'Kubernetes'].includes(tech))) {
+        return `DevOps & ${mainTechs} Interview`;
+      } else {
+        return `${role} - ${mainTechs} Focus`;
+      }
+    } 
+    
+    // Priority 3: Template interviews
+    if (id.startsWith('template-')) {
+      return `${role} Practice Interview`;
+    } 
+    
+    // Priority 4: Completed interview with no extracted tech stack
+    if (completed) {
+      return `${role} Interview (Completed)`;
+    } 
+    
+    // Priority 5: Default fallback
+    return `${role} Interview`;
+  };
+
   return (
     <div className="card-border w-[360px] max-sm:w-full min-h-96">
       <div className="card-interview">
@@ -102,9 +133,13 @@ const InterviewCard = ({
           <div className="absolute top-0 right-0 w-fit px-4 py-2 rounded-bl-lg bg-light-400">
             <p className="badge-text">{normalizedType}</p>
           </div>
-          <Image src={getRandomInterviewCover()} alt="cover image" width={90} height={90} className="rounded-full object-fit size-[90px]"/>
-          <h3 className="mt-5 capitalize">
-            {role}
+          <div className="flex items-center justify-center w-[90px] h-[90px] bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="white"/>
+            </svg>
+          </div>
+          <h3 className="mt-5 capitalize text-center">
+            {getDisplayName()}
           </h3>
           <div className="flex flex-row gap-5 mt-3">
             <div className="flex flex-row gap-2">

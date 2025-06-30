@@ -121,10 +121,13 @@ ANALYSIS INSTRUCTIONS:
 
 2. EVIDENCE-BASED ASSESSMENT: Each score must be supported by specific response evidence
 
-3. CONTEXTUAL NAMING: Generate a specific, descriptive interview name based on actual topics discussed:
-   - Focus on main technologies and concepts covered
-   - Include specific areas like "React Component Architecture", "Database Design & Optimization", "API Development & Security"
-   - Examples: "React State Management Deep Dive", "Node.js Authentication Implementation", "Full-Stack Data Architecture"
+3. CONTEXTUAL NAMING: Generate a highly specific, descriptive interview name based on the ACTUAL conversation content:
+   - Analyze what was genuinely discussed during the interview, not just the original setup
+   - Focus on specific technical topics, challenges, or projects that came up in conversation
+   - Include technologies and concepts that were actually covered
+   - Make it sound like a meaningful interview session about specific topics
+   - Examples: "React Hooks & Performance Optimization Discussion", "Database Schema Design & API Integration", "Frontend Architecture & State Management Patterns", "Microservices Design & Docker Deployment", "Authentication Systems & Security Best Practices"
+   - If no specific technical depth emerged, use conversational themes: "Software Development Experience & Problem-Solving", "Technical Skills Assessment & Career Discussion"
 
 4. COMPREHENSIVE TECH EXTRACTION: Extract ALL technologies mentioned, including:
    - Programming languages (JavaScript, Python, Java, etc.)
@@ -163,6 +166,13 @@ SCORING RATIONALE: For each category score, provide specific reasoning:
 - Which answers were strong/weak and why?
 - What evidence supports this assessment?
 
+INTERVIEW NAME REQUIREMENTS:
+- The interview name MUST be based on actual conversation content, not just job roles
+- Analyze what specific topics, technologies, or challenges were discussed
+- Create a title that meaningfully describes the interview session
+- Examples of GOOD names: "System Design & Scalability Discussion", "React Performance & State Management", "Database Architecture & API Security"
+- Examples of BAD names: "Frontend Developer Interview", "Technical Assessment", "Software Engineer Discussion"
+
 IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Use conservative scoring - only exceptional responses should score 85+. Typical good responses should score in the 70s. Poor or vague responses should receive scores in the 50s-60s. Provide specific reasoning for each score.
 
 Respond with only the JSON, no additional text.`;
@@ -193,7 +203,7 @@ Respond with only the JSON, no additional text.`;
             // Provide fallback analysis if AI call fails
             console.log('🔄 Using fallback analysis due to AI failure...');
             analysis = {
-                interviewName: `${interviewData.role} Technical Interview - Regenerated`,
+                interviewName: `${interviewData.role} Interview - ${interviewData.extractedTechStack && interviewData.extractedTechStack.length > 0 ? interviewData.extractedTechStack.slice(0, 2).join(' & ') + ' Discussion' : 'Technical Assessment'}`,
                 extractedTechStack: interviewData.extractedTechStack || [],
                 totalScore: 68,
                 categoryScores: [
@@ -219,7 +229,7 @@ Respond with only the JSON, no additional text.`;
         const now = new Date().toISOString();
         try {
             await db.collection('interviews').doc(interviewId).update({
-                role: analysis.interviewName,
+                interviewName: analysis.interviewName, // Use the correct field for interview name
                 extractedTechStack: analysis.extractedTechStack, // Keep extracted tech stack separate
                 score: analysis.totalScore,
                 updatedAt: now

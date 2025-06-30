@@ -25,6 +25,7 @@ interface Interview {
   questions: string[];
   techstack: string[];
   extractedTechStack?: string[]; // Technologies actually discussed in the interview
+  interviewName?: string; // Descriptive name based on interview content
   createdAt: string;
   userId: string;
   type: string;
