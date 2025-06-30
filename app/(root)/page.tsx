@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import InterviewCard from "@/components/InterviewCard";
+import RecommendedInterviews from "@/components/RecommendedInterviews";
 
 // Practice interview templates
 const practiceTemplates: Interview[] = [
@@ -55,6 +56,54 @@ const practiceTemplates: Interview[] = [
     status: "pending",
     createdAt: new Date().toISOString(),
   },
+  {
+    id: "template-python",
+    userId: "",
+    role: "Python Developer Practice",
+    type: "Technical",
+    level: "Intermediate",
+    techstack: ["Python", "Django", "PostgreSQL", "Redis"],
+    questions: [
+      "Explain Python's GIL and its implications",
+      "How do you optimize Django queries?",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "template-devops",
+    userId: "",
+    role: "DevOps Engineer Practice",
+    type: "Technical",
+    level: "Senior",
+    techstack: ["Docker", "Kubernetes", "AWS", "Terraform"],
+    questions: [
+      "Describe your CI/CD pipeline design",
+      "How do you handle infrastructure as code?",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "template-mobile",
+    userId: "",
+    role: "Mobile Developer Practice",
+    type: "Technical", 
+    level: "Mid-level",
+    techstack: ["React Native", "TypeScript", "Firebase", "Redux"],
+    questions: [
+      "How do you handle cross-platform development?",
+      "Explain mobile app performance optimization",
+    ],
+    finalized: false,
+    completed: false,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 const page = () => {
@@ -63,6 +112,9 @@ const page = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [userSkillProfile, setUserSkillProfile] = useState<any>(null);
 
   // Get current user ID (you may need to implement user authentication)
   useEffect(() => {
@@ -142,6 +194,40 @@ const page = () => {
 
     fetchUserInterviews();
   }, [currentUserId]);
+
+  // Fetch recommendations when user is authenticated and has completed interviews
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!currentUserId || !isAuthenticated) return;
+
+      try {
+        setRecommendationsLoading(true);
+        const response = await fetch(`/api/interview/recommendations?userId=${currentUserId}&limit=6`);
+        const data = await response.json();
+
+        if (data.success) {
+          setRecommendations(data.recommendations);
+          setUserSkillProfile(data.skillProfile);
+        } else {
+          console.error("Failed to fetch recommendations:", data.error);
+          setRecommendations([]);
+        }
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+        setRecommendations([]);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+
+    // Only fetch recommendations if user has completed at least one interview
+    if (currentUserId && userInterviews.length > 0) {
+      fetchRecommendations();
+    } else {
+      setRecommendations([]);
+      setRecommendationsLoading(false);
+    }
+  }, [currentUserId, isAuthenticated, userInterviews.length]);
 
   // Function to change user name (for non-authenticated users)
   const handleNameChange = () => {
@@ -253,12 +339,48 @@ const page = () => {
       </section>
 
       <section className="flex flex-col gap-6 mt-8">
-        <h2>Start a New Interview</h2>
-        <div className="interviews-section">
-          {practiceTemplates.map((template) => (
-            <InterviewCard {...template} key={template.id} />
-          ))}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2>
+              {isAuthenticated && userInterviews.length > 0
+                ? "Recommended Interviews Based on Your Skills"
+                : "Start a New Interview"}
+            </h2>
+            {isAuthenticated && userInterviews.length > 0 && (
+              <p className="text-sm text-gray-400 mt-1">
+                Personalized recommendations based on your interview history and performance
+              </p>
+            )}
+          </div>
+          {isAuthenticated && userInterviews.length > 0 && (
+            <Button asChild variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Link href="/interview">Quick Start</Link>
+            </Button>
+          )}
         </div>
+        
+        {isAuthenticated && userInterviews.length > 0 ? (
+          <RecommendedInterviews 
+            recommendations={recommendations}
+            isLoading={recommendationsLoading}
+            userSkillProfile={userSkillProfile}
+          />
+        ) : (
+          <>
+            {!isAuthenticated && (
+              <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mb-4">
+                <p className="text-blue-300 text-sm">
+                  💡 <strong>Tip:</strong> Sign in to get personalized interview recommendations based on your skills and performance history.
+                </p>
+              </div>
+            )}
+            <div className="interviews-section">
+              {practiceTemplates.map((template) => (
+                <InterviewCard {...template} key={template.id} />
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </>
   );
