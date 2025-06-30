@@ -239,6 +239,9 @@ const FeedbackPage = () => {
             </div>
           </div>
           <div className="flex gap-2 max-sm:w-full max-sm:flex-col">
+            <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white max-sm:w-full">
+              <Link href={`/interview/${params.id}/enhanced-feedback`}>Enhanced Analysis</Link>
+            </Button>
             <Button variant="outline" asChild className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white max-sm:w-full">
               <Link href="/">Back to Dashboard</Link>
             </Button>
@@ -384,6 +387,58 @@ const FeedbackPage = () => {
       {interview.transcript && interview.transcript.length > 0 && (
         <TranscriptViewer transcript={interview.transcript} />
       )}
+
+      {/* Enhanced Feedback Promotion */}
+      <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-xl shadow-lg border border-blue-700/30 p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+              <svg className="w-6 h-6 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+              Unlock Enhanced Analysis
+            </h2>
+            <p className="text-gray-300 mb-4">
+              Get detailed question-by-question breakdown with model answers, precision scoring, and personalized improvement plans.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Accuracy-based scoring (0-100)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Model answers for each question</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Keyword analysis & relevance</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Skill level assessment</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Benchmarking vs. industry standards</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-gray-300">Personalized learning resources</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white ml-4">
+            <Link href={`/interview/${params.id}/enhanced-feedback`}>
+              Get Enhanced Analysis →
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-4 justify-center">

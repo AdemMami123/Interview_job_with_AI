@@ -139,14 +139,17 @@ const InterviewCard = ({
           </p>
         </div>
         
-        <div className="flex flex-row justify-between">
+        <div className="flex flex-row justify-between items-center">
           <DisplayTechIcons techStack={displayTechStack} />
-          <Link 
-            href={completed ? `/interview/${id}/feedback` : id.startsWith('template-') ? '/interview' : `/interview/${id}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-          >
-            {completed ? 'View Feedback' : id.startsWith('template-') ? 'Start Interview' : 'View Interview'}
-          </Link>
+          <div className="flex gap-2">
+            <Link 
+              href={completed ? `/interview/${id}/feedback` : id.startsWith('template-') ? '/interview' : `/interview/${id}`}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+            >
+              {completed ? 'View Feedback' : id.startsWith('template-') ? 'Start Interview' : 'View Interview'}
+            </Link>
+            
+          </div>
         </div>
       </div>
     </div>
