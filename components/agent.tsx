@@ -114,9 +114,16 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 return;
             }
             
-            // For template interviews, don't auto-start listening to avoid interference
-            // User will need to use Push to Talk button
+            // For template interviews, auto-start listening after AI responses
             if (type === 'template') {
+                // Always auto-start listening after any response in template interviews now that they're interactive
+                if (callStatus === CallStatus.ACTIVE && !voiceDisabled) {
+                    setTimeout(() => {
+                        if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) {
+                            startListening();
+                        }
+                    }, 2000);
+                }
                 return;
             }
             
@@ -267,13 +274,42 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 return;
             }
             
-            // Template-based interview logic
+            // Template-based interview logic with conversational AI
             if (type === 'template' && interviewQuestions.length > 0) {
+                // Increment conversation count for template interviews too
+                setConversationCount(prev => prev + 1);
                 
                 // Check if this was the last question
                 if (currentQuestionIndex >= interviewQuestions.length - 1) {
-                    // All template questions completed
-                    const endingResponse = `${userName}, thank you so much for answering all the questions! That completes our interview. Your responses have been very insightful. We'll review your answers and get back to you soon. Have a great day!`;
+                    // All template questions completed - get AI's final response
+                    const response = await fetch('/api/interview/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: answer,
+                            conversationHistory: messages,
+                            interviewContext: {
+                                role: role || 'Software Developer',
+                                level: level || 'Mid-level',
+                                techStack: techstack?.join(', ') || 'General',
+                                conversationCount: conversationCount + 1,
+                                isTemplateInterview: true,
+                                templateQuestions: interviewQuestions,
+                                currentQuestionIndex: currentQuestionIndex,
+                                isLastQuestion: true
+                            }
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const { response: aiResponse } = await response.json();
+                        if (aiResponse) {
+                            await speak(aiResponse);
+                        }
+                    }
+                    
+                    // End the interview after AI response
+                    const endingResponse = `${userName}, that completes our interview. Thank you so much for your thoughtful responses! We'll review your answers and get back to you soon. Have a great day!`;
                     await speak(endingResponse);
                     
                     // Save interview and end immediately after speaking
@@ -284,20 +320,53 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                     return;
                 }
                 
+                // Get AI response to current answer and transition to next question
+                const response = await fetch('/api/interview/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: answer,
+                        conversationHistory: messages,
+                        interviewContext: {
+                            role: role || 'Software Developer',
+                            level: level || 'Mid-level',
+                            techStack: techstack?.join(', ') || 'General',
+                            conversationCount: conversationCount + 1,
+                            isTemplateInterview: true,
+                            templateQuestions: interviewQuestions,
+                            currentQuestionIndex: currentQuestionIndex,
+                            nextQuestion: interviewQuestions[currentQuestionIndex + 1]
+                        }
+                    })
+                });
+                
+                let aiResponse = '';
+                if (response.ok) {
+                    const data = await response.json();
+                    aiResponse = data.response || '';
+                }
+                
                 // Move to next question
                 const nextQuestionIndex = currentQuestionIndex + 1;
-                
-                // Update question index first
                 setCurrentQuestionIndex(nextQuestionIndex);
                 
-                // Add a small delay to ensure state updates
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // If AI gave a response, speak it, otherwise use fallback
+                if (aiResponse.trim()) {
+                    await speak(aiResponse);
+                } else {
+                    // Fallback conversational transition to next question
+                    const nextQuestion = interviewQuestions[nextQuestionIndex];
+                    const transitionResponses = [
+                        `That's a great answer! I can see you have good experience there. Let me ask you about something else: ${nextQuestion}`,
+                        `Interesting perspective! Thanks for sharing that. Now I'd like to know: ${nextQuestion}`,
+                        `I appreciate that insight. That gives me a good understanding. My next question is: ${nextQuestion}`,
+                        `Thank you for that detailed response. It's clear you've thought about this. Let me ask: ${nextQuestion}`
+                    ];
+                    
+                    const randomTransition = transitionResponses[Math.floor(Math.random() * transitionResponses.length)];
+                    await speak(randomTransition);
+                }
                 
-                // Ask the next template question
-                const nextQuestion = interviewQuestions[nextQuestionIndex];
-                const questionText = `Thank you for that answer. Here's my next question: ${nextQuestion}`;
-                
-                await speak(questionText);
                 return;
             }
             
@@ -512,8 +581,8 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             
             // Different greeting based on interview type
             if (type === 'template' && interviewQuestions.length > 0) {
-                // Template-based interview: Start with structured introduction and first question
-                const templateGreeting = `Hello ${userName}! Welcome to your interview. I'll be asking you ${interviewQuestions.length} questions based on the ${role || 'position'} role at the ${level || 'level'} level. Please take your time with each answer. Let's begin with the first question: ${interviewQuestions[0]}`;
+                // Template-based interview: Start with conversational introduction and first question
+                const templateGreeting = `Hello ${userName}! It's great to meet you today. Thank you for taking the time to interview with us. I'm really excited to learn more about you and your experience. We'll be going through ${interviewQuestions.length} questions together, and I encourage you to share as much detail as you'd like - this is your chance to really showcase your skills and experience. Are you ready to get started? Great! Let's begin with: ${interviewQuestions[0]}`;
                 
                 await speak(templateGreeting);
             } else {
@@ -589,7 +658,7 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
         </div>
         <div className='card-border'>
             <div className='card-content'>
-                <Image src="/user-avatar.png" alt="user avatar" height={540} width={540} className='rounded-full object-cover size-[120px]' />
+                <Image src="/user2.png" alt="user avatar" height={540} width={540} className='rounded-full object-cover size-[120px]' />
                 <h3>{userName}</h3>
             </div>
         </div>

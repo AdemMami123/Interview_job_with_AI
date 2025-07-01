@@ -53,6 +53,33 @@ interface User {
   updatedAt?: string;
 }
 
+interface UserPreferences {
+  // Notification preferences
+  emailNotifications: boolean;
+  interviewReminders: boolean;
+  weeklyReports: boolean;
+  achievementNotifications: boolean;
+
+  // Interview preferences
+  difficulty: 'easy' | 'medium' | 'hard';
+  interviewDuration: number; // in minutes
+  voiceEnabled: boolean;
+  autoSave: boolean;
+  showHints: boolean;
+  feedbackDetail: 'basic' | 'detailed' | 'comprehensive';
+  pauseEnabled: boolean;
+
+  // Appearance preferences
+  darkMode: boolean;
+  language: string;
+  timezone: string;
+
+  // Privacy preferences
+  profileVisibility: 'public' | 'private';
+  shareStats: boolean;
+  dataCollection: boolean;
+}
+
 interface UserStats {
   totalInterviews: number;
   averageScore: number;

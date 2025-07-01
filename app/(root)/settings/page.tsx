@@ -9,10 +9,18 @@ const SettingsPage = () => {
   const [user, setUser] = useState<{id: string, name: string, email: string} | null>(null);
   const [stats, setStats] = useState<{totalInterviews: number, averageScore: number, totalHours: number} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [preferences, setPreferences] = useState({
     emailNotifications: true,
     interviewReminders: true,
     darkMode: true,
+    difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    interviewDuration: 30,
+    voiceEnabled: true,
+    autoSave: true,
+    feedbackDetail: 'detailed' as 'basic' | 'detailed' | 'comprehensive',
+    profileVisibility: 'private' as 'public' | 'private',
   });
 
   useEffect(() => {
@@ -66,8 +74,11 @@ const SettingsPage = () => {
     };
     
     setPreferences(newPreferences);
+    setHasUnsavedChanges(true);
 
+    // Auto-save preferences
     try {
+      setSavingPreferences(true);
       const response = await fetch('/api/auth/preferences', {
         method: 'POST',
         headers: {
@@ -77,7 +88,8 @@ const SettingsPage = () => {
       });
 
       if (response.ok) {
-        toast.success('Preference updated');
+        toast.success('Preference updated successfully');
+        setHasUnsavedChanges(false);
       } else {
         throw new Error('Failed to save preference');
       }
@@ -85,16 +97,30 @@ const SettingsPage = () => {
       console.error('Error saving preference:', error);
       // Revert the change if save failed
       setPreferences(preferences);
-      toast.error('Failed to save preference');
+      setHasUnsavedChanges(false);
+      toast.error('Failed to save preference. Please try again.');
+    } finally {
+      setSavingPreferences(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-96">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce"></div>
-          <span>Loading settings...</span>
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-gray-400">Manage your account and application preferences</p>
+        </div>
+        
+        <div className="flex justify-center items-center min-h-96">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-5 h-5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-5 h-5 bg-blue-500 rounded-full animate-bounce"></div>
+            </div>
+            <span className="text-gray-300">Loading settings...</span>
+          </div>
         </div>
       </div>
     );
@@ -127,7 +153,15 @@ const SettingsPage = () => {
 
       {/* Preferences Section */}
       <section>
-        <h2 className="text-xl font-semibold text-white mb-4">Preferences</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">Preferences</h2>
+          {savingPreferences && (
+            <div className="flex items-center gap-2 text-sm text-blue-400">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              Saving...
+            </div>
+          )}
+        </div>
         <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 space-y-6">
           
           {/* Notification Settings */}
