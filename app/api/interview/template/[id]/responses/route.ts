@@ -115,7 +115,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         // Generate AI feedback for the template response
         console.log('🤖 Generating AI feedback for template response...');
         
-        const analysisPrompt = `You are an expert interviewer analyzing a completed interview based on a specific template. Based on the transcript, provide comprehensive evaluation and scoring.
+        const analysisPrompt = `You are an expert interviewer analyzing a completed template-based interview. Evaluate the candidate's performance based on the actual conversation flow and response quality.
 
 TEMPLATE DETAILS:
 - Template: ${templateData.name}
@@ -134,50 +134,56 @@ TRANSCRIPT:
 ${transcript.map((msg: any) => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n')}
 
 ANALYSIS INSTRUCTIONS:
-1. SYSTEMATIC EVALUATION FRAMEWORK: Assess each response using structured criteria:
+1. CONVERSATIONAL ASSESSMENT: Evaluate based on the actual interaction quality:
 
    Technical Knowledge (40% weight):
-   - 90-100: Expert-level understanding, accurate technical details, advanced concepts explained clearly
-   - 80-89: Solid technical foundation, correct information, good grasp of core concepts
-   - 70-79: Basic understanding with some gaps, generally correct but lacks depth
-   - 60-69: Limited technical knowledge, some inaccuracies or overly vague responses
-   - 50-59: Poor technical understanding, significant errors or confusion
-   - Below 50: Major technical gaps, fundamentally incorrect information
+   - 90-100: Expert-level responses with deep understanding, accurate details, advanced concepts
+   - 80-89: Strong technical foundation with mostly accurate and comprehensive information
+   - 70-79: Adequate understanding with minor gaps, generally sound but needs more depth
+   - 60-69: Basic knowledge with notable gaps, some inaccuracies or vague responses
+   - 50-59: Limited understanding with significant errors or confusion
+   - Below 50: Major technical deficiencies, fundamentally incorrect responses
 
    Communication Skills (25% weight):
-   - 90-100: Exceptionally clear and well-organized responses, excellent articulation
-   - 80-89: Clear communication with good structure and flow
-   - 70-79: Generally understandable with minor clarity issues
-   - 60-69: Somewhat unclear or poorly organized responses
-   - 50-59: Difficult to follow, poor communication structure
-   - Below 50: Very unclear or incoherent responses
+   - 90-100: Exceptionally clear, well-structured, great conversational flow
+   - 80-89: Clear communication with good organization and articulation
+   - 70-79: Generally clear with minor issues in structure or clarity
+   - 60-69: Somewhat unclear, lacks good organization, harder to follow
+   - 50-59: Poor communication structure, unclear responses
+   - Below 50: Very unclear or incoherent communication
 
    Problem Solving (25% weight):
-   - 90-100: Methodical approach, breaks down complex problems systematically
-   - 80-89: Good logical thinking and reasonable problem-solving process
-   - 70-79: Basic problem-solving with some logical gaps
+   - 90-100: Systematic approach, excellent logical reasoning, considers multiple angles
+   - 80-89: Good problem-solving methodology with reasonable logical thinking
+   - 70-79: Basic problem-solving skills with some logical structure
    - 60-69: Limited problem-solving ability, struggles with systematic thinking
-   - 50-59: Poor logical reasoning, confused approach to problems
+   - 50-59: Poor logical reasoning, confused approach to challenges
    - Below 50: No clear problem-solving methodology demonstrated
 
-   Experience & Examples (10% weight):
-   - 90-100: Rich, detailed examples that clearly demonstrate hands-on competence
-   - 80-89: Good practical examples with sufficient detail
-   - 70-79: Some relevant examples but lacking comprehensive detail
-   - 60-69: Few or weak examples, limited practical experience evident
-   - 50-59: Poor or irrelevant examples provided
-   - Below 50: No meaningful practical examples given
+   Engagement & Professionalism (10% weight):
+   - 90-100: Highly engaged, professional, asks thoughtful questions, shows genuine interest
+   - 80-89: Good engagement level with professional demeanor throughout
+   - 70-79: Adequate engagement with some missed opportunities for deeper interaction
+   - 60-69: Limited engagement, minimal interaction beyond basic answers
+   - 50-59: Poor engagement, appears disinterested or unprofessional
+   - Below 50: Very poor engagement, concerning professional behavior
 
-2. LEVEL-APPROPRIATE ASSESSMENT: Adjust expectations based on the template level (${templateData.level}):
-   - Beginner: Focus on basic understanding and learning ability
-   - Intermediate: Expect solid fundamentals and some practical experience
+2. TEMPLATE PERFORMANCE ANALYSIS: How well did they handle the structured interview format?
+   - Did they provide complete answers to template questions?
+   - How did they respond to follow-up questions and clarifications?
+   - Were they able to engage conversationally beyond just answering questions?
+   - Did they demonstrate curiosity about the role or company?
+
+3. LEVEL-APPROPRIATE EXPECTATIONS: Calibrate assessment based on ${templateData.level} level:
+   - Beginner: Focus on foundational understanding and learning potential
+   - Intermediate: Expect solid fundamentals with some practical experience
    - Advanced: Require deep expertise and extensive real-world application
 
-4. MEANINGFUL INTERVIEW NAMING: Generate a specific, descriptive interview name based on the actual conversation content:
-   - Analyze what topics were genuinely discussed during the interview
-   - Focus on specific technical areas, concepts, or challenges that emerged
-   - Include the candidate name if provided, but make the focus on content
-   - Examples: "Sarah's React & TypeScript Development Assessment", "Frontend Component Architecture Discussion - Mike", "Database Design & API Integration Review - Anna"
+4. CONVERSATION-BASED NAMING: Create a descriptive assessment title based on actual topics discussed:
+   - Analyze what was genuinely covered during the conversation
+   - Focus on specific technical areas that emerged naturally
+   - Include candidate name and make it meaningful
+   - Examples: "Sarah's React Component Design & State Management", "Frontend Performance & User Experience - Mike", "Database Integration & API Development - Anna"
    - If no specific technical topics emerged, use conversational themes: "Technical Foundation Assessment - John", "Software Development Experience Review - Maria"
 
 5. COMPREHENSIVE FEEDBACK: Provide specific, actionable insights based on actual responses and template requirements

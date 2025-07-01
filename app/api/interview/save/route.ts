@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
         // Generate interview analysis using AI
         console.log('🤖 Generating interview analysis...');
-        const analysisPrompt = `You are an expert technical interviewer analyzing a completed interview. Based on the transcript, provide a comprehensive evaluation including intelligent scoring based on response quality, and extract all technologies discussed.
+        const analysisPrompt = `You are an expert technical interviewer analyzing a completed interview. Based on the actual conversation transcript, provide a comprehensive evaluation with intelligent scoring that reflects the candidate's true performance.
 
 INTERVIEW DETAILS:
 - Role: ${role}
@@ -38,103 +38,125 @@ TRANSCRIPT:
 ${transcript.map((msg: any) => `${msg.role === 'user' ? 'Candidate' : 'Interviewer'}: ${msg.content}`).join('\n')}
 
 ANALYSIS INSTRUCTIONS:
-1. LOGICAL SCORING FRAMEWORK: Evaluate each response systematically and assign scores based on measurable criteria:
+1. CONVERSATIONAL QUALITY ASSESSMENT: Analyze the actual conversation flow and candidate responses:
 
    Technical Knowledge (40% weight):
-   - 90-100: Demonstrates expert understanding, uses correct terminology, explains complex concepts clearly
-   - 80-89: Shows solid technical foundation, mostly accurate information, good grasp of fundamentals
-   - 70-79: Basic understanding evident, some gaps or unclear explanations, needs more depth
-   - 60-69: Limited technical knowledge, several inaccuracies or vague responses
-   - 50-59: Poor technical understanding, mostly incorrect or confused responses
-   - Below 50: Major technical gaps, fundamentally incorrect answers
+   - 90-100: Expert-level responses with deep understanding, accurate technical details, advanced concepts explained clearly
+   - 80-89: Strong technical foundation, mostly accurate information, good grasp of core concepts
+   - 70-79: Adequate understanding with minor gaps, generally sound but needs more depth
+   - 60-69: Basic knowledge with notable gaps, some inaccuracies or overly vague responses
+   - 50-59: Limited understanding, significant errors or confusion evident
+   - Below 50: Major technical deficiencies, fundamentally incorrect information
 
    Communication Skills (25% weight):
-   - 90-100: Exceptionally clear, well-structured responses, excellent articulation
-   - 80-89: Clear communication, good structure, easy to follow
-   - 70-79: Generally clear with some organizational issues or minor unclear points
+   - 90-100: Exceptionally articulate, clear explanations, great conversational flow
+   - 80-89: Clear and well-organized communication, easy to follow
+   - 70-79: Generally clear with minor issues in organization or clarity
    - 60-69: Somewhat unclear, lacks structure, difficult to follow at times
    - 50-59: Poor communication, very unclear or disorganized responses
    - Below 50: Incoherent or extremely difficult to understand
 
    Problem Solving (25% weight):
-   - 90-100: Systematic approach, breaks down problems logically, considers multiple solutions
-   - 80-89: Good logical thinking, reasonable problem-solving approach
-   - 70-79: Basic problem-solving skills, sometimes lacks systematic approach
-   - 60-69: Limited problem-solving ability, struggles with logical reasoning
-   - 50-59: Poor problem-solving approach, illogical or confused thinking
-   - Below 50: No clear problem-solving ability demonstrated
+   - 90-100: Systematic approach, excellent logical reasoning, considers multiple solutions
+   - 80-89: Good problem-solving methodology, reasonable logical thinking
+   - 70-79: Basic problem-solving skills with some logical structure
+   - 60-69: Limited problem-solving ability, struggles with systematic thinking
+   - 50-59: Poor logical reasoning, confused approach to problems
+   - Below 50: No clear problem-solving methodology demonstrated
 
-   Experience & Examples (10% weight):
-   - 90-100: Rich, detailed real-world examples that clearly demonstrate competence
-   - 80-89: Good practical examples with adequate detail
-   - 70-79: Some relevant examples but lacking detail or clarity
-   - 60-69: Few or weak examples, limited practical experience shown
-   - 50-59: Poor or irrelevant examples
-   - Below 50: No meaningful examples provided
+   Engagement & Professionalism (10% weight):
+   - 90-100: Highly engaged, asks thoughtful questions, demonstrates genuine interest
+   - 80-89: Good engagement level, professional demeanor, appropriate responses
+   - 70-79: Adequate engagement, some missed opportunities for deeper interaction
+   - 60-69: Limited engagement, minimal interaction beyond basic answers
+   - 50-59: Poor engagement, appears disinterested or unprofessional
+   - Below 50: Very poor engagement, concerning professional behavior
 
-   Total Score Calculation: (Technical × 0.4) + (Communication × 0.25) + (Problem Solving × 0.25) + (Experience × 0.1)
+2. EVIDENCE-BASED SCORING: Each score must be justified by specific examples from the conversation:
+   - Quote specific responses that demonstrate competency levels
+   - Note conversation patterns that indicate engagement and understanding
+   - Identify missed opportunities or areas where responses fell short
+   - Consider the natural flow and authenticity of the conversation
+3. CONVERSATIONAL FLOW ANALYSIS: Evaluate the natural flow and quality of the conversation:
+   - How well did the candidate engage with follow-up questions?
+   - Did they provide specific examples when asked?
+   - Were they able to elaborate on technical topics naturally?
+   - Did they ask thoughtful questions about the role or company?
+   - How did they handle unexpected or challenging questions?
 
-2. RESPONSE QUALITY ASSESSMENT: For each answer, evaluate:
-   - Accuracy: Is the information technically correct?
-   - Depth: Does the response show deep understanding or surface-level knowledge?
-   - Clarity: Can the explanation be easily understood?
-   - Relevance: Does the answer directly address the question?
-   - Examples: Are concrete, relevant examples provided?
+4. CONTEXTUAL NAMING: Generate a highly specific, descriptive interview name based on the ACTUAL conversation content:
+   - Analyze what topics were genuinely discussed during the interview
+   - Focus on specific technical areas, challenges, or insights that emerged
+   - Include technologies and concepts that were actually explored in depth
+   - Make it descriptive of the actual conversation experience
+   - Examples: "React Component Architecture & Performance Discussion", "Backend API Design & Database Strategies", "Full-Stack Development & Security Best Practices", "Frontend State Management & User Experience", "System Design & Scalability Approaches"
+   - If the conversation was more general: "Software Development Experience & Problem-Solving", "Technical Foundation & Career Aspirations"
 
-3. CONTEXTUAL NAMING: Generate a highly specific, descriptive interview name based on the ACTUAL conversation topics:
-   - Analyze what was genuinely discussed during the interview, not just the job role
-   - Focus on specific technical concepts, challenges, or projects mentioned
-   - Include specific technologies and areas that came up in conversation
-   - Make it sound like a meaningful interview session title
-   - Examples: "React Hooks & State Management Discussion", "Database Optimization & Node.js APIs", "Full-Stack Authentication & Security Patterns", "Frontend Performance & Component Architecture", "Microservices Design & Docker Deployment"
-   - If no specific technical topics were discussed, use conversational themes like "Software Development Experience & Career Goals", "Technical Problem-Solving & Project Experience"
+5. TECHNOLOGY EXTRACTION: Extract ALL technologies that were actually discussed or mentioned:
+   - Only include technologies that came up naturally in conversation
+   - Include programming languages, frameworks, tools, databases, concepts
+   - If the candidate demonstrated knowledge through examples or explanations
+   - DO NOT include technologies from the original stack unless actually discussed
 
-4. CRITICAL TECH EXTRACTION: Carefully analyze the transcript and extract ONLY technologies that were actually mentioned, discussed, or referenced during the conversation:
-   - Programming languages (JavaScript, Python, Java, TypeScript, etc.)
-   - Frameworks and libraries (React, Angular, Vue, Express, Django, Next.js, etc.)
-   - Databases (MongoDB, PostgreSQL, MySQL, Redis, etc.)
-   - Tools and platforms (Docker, AWS, Git, VS Code, Node.js, etc.)
-   - Concepts and methodologies (REST API, GraphQL, Microservices, etc.)
-   
-   IMPORTANT: If NO specific technologies are mentioned in the transcript, return an empty array for extractedTechStack.
-   Do NOT include technologies from the original tech stack unless they were actually discussed.
+6. EVIDENCE-BASED FEEDBACK: Provide specific examples from the conversation to support scores:
+   - Quote specific responses that demonstrate strengths or weaknesses
+   - Reference particular moments that influenced the assessment
+   - Mention conversation patterns that indicate skill level
 
 Please provide your evaluation in this JSON format:
 {
-  "interviewName": "Specific descriptive name based on actual conversation topics",
-  "extractedTechStack": ["Complete list of all technologies, tools, and concepts mentioned"],
-  "totalScore": (calculated as weighted average: Technical Knowledge 40%, Communication 25%, Problem Solving 25%, Clarity 10%),
+  "interviewName": "Specific descriptive name reflecting actual conversation topics",
+  "extractedTechStack": ["Technologies actually discussed with evidence of knowledge"],
+  "totalScore": (weighted average: Technical Knowledge 40%, Communication 25%, Problem Solving 25%, Engagement 10%),
   "categoryScores": [
-    {"name": "Technical Knowledge", "score": (1-100), "comment": "Assessment of technical accuracy, depth, and expertise demonstrated"},
-    {"name": "Communication Skills", "score": (1-100), "comment": "Clarity of explanations, structure of responses, listening skills"},
-    {"name": "Problem Solving", "score": (1-100), "comment": "Logical approach, debugging skills, analytical thinking"},
-    {"name": "Experience & Examples", "score": (1-100), "comment": "Real-world examples, practical experience, project insights"},
-    {"name": "Engagement & Confidence", "score": (1-100), "comment": "Enthusiasm, confidence level, question-asking, cultural fit"}
+    {"name": "Technical Knowledge", "score": (1-100), "comment": "Evidence-based assessment with specific examples from responses"},
+    {"name": "Communication Skills", "score": (1-100), "comment": "Clarity, structure, and conversational flow demonstrated"},
+    {"name": "Problem Solving", "score": (1-100), "comment": "Logical thinking and approach to challenges shown"},
+    {"name": "Experience & Examples", "score": (1-100), "comment": "Quality of real-world examples and practical insights"},
+    {"name": "Engagement & Confidence", "score": (1-100), "comment": "Interview engagement, professionalism, and confidence level"}
   ],
-  "strengths": ["Specific observable strengths from responses"],
-  "areasForImprovement": ["Specific areas where responses were weak or incomplete"],
-  "finalAssessment": "Comprehensive assessment highlighting key findings and overall impression",
+  "strengths": ["Specific strengths observed with conversation evidence"],
+  "areasForImprovement": ["Specific improvement areas with examples"],
+  "finalAssessment": "Comprehensive assessment based on actual conversation quality and candidate performance",
   "interviewInsights": {
-    "mainTopicsDiscussed": ["Key technical topics covered"],
-    "skillLevel": "Assessment of candidate's actual skill level based on responses",
-    "recommendedNext": "Suggested next steps or areas to focus on"
+    "mainTopicsDiscussed": ["Key topics that emerged in conversation"],
+    "skillLevel": "Evidence-based assessment of actual demonstrated skill level",
+    "recommendedNext": "Specific next steps based on observed performance"
   }
 }
 
-SCORING RATIONALE: For each category score, provide specific reasoning:
-- What specific responses or behaviors led to this score?
-- Which answers were strong/weak and why?
-- What evidence supports this assessment?
+CRITICAL ASSESSMENT GUIDELINES:
+1. EVIDENCE-BASED SCORING: Every score must be justified by specific conversation examples
+   - Quote specific responses that demonstrate competency levels
+   - Reference particular moments that influenced the assessment
+   - Note patterns in their responses (consistency, depth, clarity)
 
-INTERVIEW NAME REQUIREMENTS: 
-- The interview name MUST be specific to what was actually discussed
-- DO NOT just use the job role (e.g., "Frontend Developer") as the name
-- Analyze the conversation and identify the main technical topics that came up
-- Create a descriptive title that someone reading it would understand what was covered
-- Examples of GOOD names: "React Component Lifecycle & Hooks Discussion", "API Design & Database Optimization", "Authentication & Security Implementation"
-- Examples of BAD names: "Frontend Developer", "Software Engineer", "Technical Interview"
+2. CONVERSATION QUALITY INDICATORS:
+   - Did they provide specific examples when asked?
+   - How did they handle follow-up questions?
+   - Were they able to explain complex topics clearly?
+   - Did they ask thoughtful questions about the role or company?
+   - How engaged were they throughout the conversation?
 
-IMPORTANT: Base scores STRICTLY on actual response quality and demonstrated competence. Low-quality, vague, or incorrect answers should receive appropriately low scores (50s-60s). Average performance should score in the 70s. Only exceptional, detailed, and accurate responses should score 85+.
+3. REALISTIC SCORING STANDARDS:
+   - 85-100: Exceptional performance with clear expertise and excellent communication
+   - 70-84: Good performance showing solid understanding and clear communication
+   - 60-69: Average performance with basic understanding but some gaps
+   - 50-59: Below average with significant gaps or unclear communication
+   - Below 50: Poor performance with major deficiencies
+
+4. INTERVIEW NAME REQUIREMENTS: 
+   - Must reflect actual conversation topics, not just job title
+   - Should be descriptive enough that someone reading it understands what was covered
+   - Examples: "React State Management & Performance Discussion", "Backend API Design & Database Strategies"
+   - Avoid generic titles like "Frontend Developer Interview"
+
+5. CONVERSATION CONTEXT: Consider the natural flow and quality of the discussion:
+   - Was it a productive technical conversation?
+   - Did the candidate demonstrate genuine knowledge through their responses?
+   - How well did they articulate their thoughts and experiences?
+
+IMPORTANT: Base all assessments strictly on actual conversation quality and demonstrated competence. Be honest about performance - not every interview should score highly. Use the full scoring range appropriately.
 
 Respond with only the JSON, no additional text.`;
 

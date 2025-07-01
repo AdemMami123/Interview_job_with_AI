@@ -108,6 +108,7 @@ interface AgentProps {
   feedbackId?: string;
   type: "generate" | "interview" | "template";
   questions?: string[];
+  questionCount?: number;
   templateId?: string;
   role?: string;
   level?: string;

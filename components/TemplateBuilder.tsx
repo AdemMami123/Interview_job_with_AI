@@ -209,97 +209,199 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 max-sm:p-4">
-      <div className="bg-gray-900 rounded-xl max-sm:rounded-lg shadow-lg border border-gray-700 p-8 max-sm:p-6">
-        <h2 className="text-2xl max-sm:text-xl font-bold text-white mb-6 max-sm:mb-4">
-          {template ? 'Edit Interview Template' : 'Create Interview Template'}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6 max-sm:space-y-4">
-          {/* Basic Information */}
-          <div className="grid gap-6 max-sm:gap-4 md:grid-cols-2 max-sm:grid-cols-1">
-            <div>
-              <Label htmlFor="name" className="text-white max-sm:text-lg">Template Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., Senior React Developer Interview"
-                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="role" className="text-white max-sm:text-lg">Job Role *</Label>
-              <Input
-                id="role"
-                value={formData.role}
-                onChange={(e) => handleInputChange('role', e.target.value)}
-                placeholder="e.g., Frontend Developer"
-                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
-                required
-              />
-            </div>
+    <div className="w-full bg-gradient-to-br from-gray-900 via-black to-gray-800 relative min-h-[calc(100vh-80px)]">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[url('/pattern.png')] opacity-5 pointer-events-none"></div>
+      
+      <div className="relative z-10 max-w-5xl mx-auto p-6 max-sm:p-4">
+        {/* Enhanced Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full px-6 py-2 border border-blue-500/30 mb-6">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            <span className="text-blue-300 text-sm font-medium">
+              {template ? 'Edit Template' : 'Template Builder'}
+            </span>
           </div>
+          
+          <h1 className="text-4xl max-sm:text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent mb-4">
+            {template ? 'Edit Interview Template' : 'Create Interview Template'}
+          </h1>
+          <p className="text-lg max-sm:text-base text-gray-300 mb-8 max-w-2xl mx-auto">
+            {template 
+              ? 'Update your template to keep it current and effective'
+              : 'Build a comprehensive interview template to streamline your hiring process'
+            }
+          </p>
+        </div>
 
-          <div>
-            <Label htmlFor="description" className="text-white max-sm:text-lg">Description</Label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Brief description of what this interview template covers..."
-              className="w-full px-3 py-2 max-sm:px-4 max-sm:py-3 max-sm:text-lg bg-gray-800 border border-gray-600 rounded-md max-sm:rounded-lg text-white"
-              rows={3}
-            />
-          </div>
-
-          {/* Interview Configuration */}
-          <div className="grid gap-6 max-sm:gap-4 md:grid-cols-3 max-sm:grid-cols-1">
-            <div>
-              <Label className="text-white max-sm:text-lg">Difficulty Level *</Label>
-              <select
-                value={formData.level}
-                onChange={(e) => handleInputChange('level', e.target.value)}
-                className="w-full px-3 py-2 max-sm:px-4 max-sm:py-3 max-sm:text-lg bg-gray-800 border border-gray-600 rounded-md max-sm:rounded-lg text-white"
-                required
-              >
-                {DIFFICULTY_LEVELS.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label className="text-white max-sm:text-lg">Number of Questions *</Label>
-              <Input
-                type="number"
-                value={formData.questionCount}
-                onChange={(e) => handleInputChange('questionCount', parseInt(e.target.value))}
-                min="1"
-                max="20"
-                className="bg-gray-800 border-gray-600 text-white max-sm:h-12 max-sm:text-lg"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Interview Types */}
-          <div>
-            <Label className="text-white max-sm:text-lg">Interview Types * (Select at least one)</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 max-sm:grid-cols-1 gap-2 max-sm:gap-3 mt-2 max-sm:mt-3">
-              {INTERVIEW_TYPES.map(type => (
-                <label key={type} className="flex items-center space-x-2 max-sm:space-x-3 cursor-pointer max-sm:p-2 max-sm:bg-gray-800 max-sm:rounded-lg">
-                  <input
-                    type="checkbox"
-                    checked={formData.type.includes(type)}
-                    onChange={() => handleTypeToggle(type)}
-                    className="rounded max-sm:w-5 max-sm:h-5"
+        {/* Enhanced Form Container */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/10 p-8 max-sm:p-6">
+          <form onSubmit={handleSubmit} className="space-y-8 max-sm:space-y-6">
+            {/* Enhanced Basic Information Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">1</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white">Basic Information</h3>
+              </div>
+              
+              <div className="grid gap-6 max-sm:gap-4 md:grid-cols-2 max-sm:grid-cols-1">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a.994.994 0 01-1.414 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    Template Name *
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="e.g., Senior React Developer Interview"
+                    className="bg-white/10 border-white/20 text-white placeholder-gray-400 h-12 text-lg rounded-xl focus:bg-white/15 focus:border-blue-400/50 transition-all duration-300"
+                    required
                   />
-                  <span className="text-sm max-sm:text-base text-gray-300">{type}</span>
-                </label>
-              ))}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+                    </svg>
+                    Job Role *
+                  </Label>
+                  <Input
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) => handleInputChange('role', e.target.value)}
+                    placeholder="e.g., Frontend Developer"
+                    className="bg-white/10 border-white/20 text-white placeholder-gray-400 h-12 text-lg rounded-xl focus:bg-white/15 focus:border-blue-400/50 transition-all duration-300"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-white font-medium flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                  Description
+                </Label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Brief description of what this interview template covers..."
+                  className="w-full h-24 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 resize-none focus:bg-white/15 focus:border-blue-400/50 transition-all duration-300"
+                  rows={3}
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Enhanced Interview Configuration Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">2</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white">Interview Configuration</h3>
+              </div>
+              
+              <div className="grid gap-6 max-sm:gap-4 md:grid-cols-3 max-sm:grid-cols-1">
+                <div className="space-y-2">
+                  <Label className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Difficulty Level *
+                  </Label>
+                  <select
+                    value={formData.level}
+                    onChange={(e) => handleInputChange('level', e.target.value)}
+                    className="w-full h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-white focus:bg-white/15 focus:border-blue-400/50 transition-all duration-300"
+                    required
+                  >
+                    {DIFFICULTY_LEVELS.map(level => (
+                      <option key={level} value={level} className="bg-gray-800">{level}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Number of Questions *
+                  </Label>
+                  <Input
+                    type="number"
+                    value={formData.questionCount}
+                    onChange={(e) => handleInputChange('questionCount', parseInt(e.target.value))}
+                    min="1"
+                    max="20"
+                    className="bg-white/10 border-white/20 text-white h-12 text-lg rounded-xl focus:bg-white/15 focus:border-blue-400/50 transition-all duration-300"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-white font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Estimated Duration
+                  </Label>
+                  <div className="bg-white/10 border border-white/20 rounded-xl h-12 flex items-center px-4 text-gray-300">
+                    ≈ {Math.ceil(formData.questionCount * 3)} minutes
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Interview Types Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">3</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white">Interview Types</h3>
+                <span className="text-sm text-gray-400">(Select at least one)</span>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {INTERVIEW_TYPES.map(type => (
+                  <label 
+                    key={type} 
+                    className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 group ${
+                      formData.type.includes(type)
+                        ? 'border-blue-500 bg-blue-500/10 text-white'
+                        : 'border-white/20 bg-white/5 text-gray-300 hover:border-blue-400/50 hover:bg-blue-500/5'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.type.includes(type)}
+                      onChange={() => handleTypeToggle(type)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center transition-all duration-300 ${
+                      formData.type.includes(type)
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-400 group-hover:border-blue-400'
+                    }`}>
+                      {formData.type.includes(type) && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="font-medium">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
           {/* Tech Stack */}
           <div>
@@ -406,39 +508,80 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ template, onSave, onC
             </div>
           </div>
 
-          {/* Visibility */}
-          <div className="flex items-center space-x-2 max-sm:space-x-3 max-sm:p-3 max-sm:bg-gray-800 max-sm:rounded-lg">
-            <input
-              type="checkbox"
-              checked={formData.isPublic}
-              onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-              className="rounded max-sm:w-5 max-sm:h-5"
-            />
-            <span className="text-sm max-sm:text-base text-gray-300">
-              Make this template public (others can find and use it)
-            </span>
-          </div>
+            {/* Enhanced Visibility Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">5</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white">Visibility Settings</h3>
+              </div>
+              
+              <label className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                formData.isPublic
+                  ? 'border-green-500 bg-green-500/10 text-white'
+                  : 'border-white/20 bg-white/5 text-gray-300 hover:border-green-400/50 hover:bg-green-500/5'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.isPublic}
+                  onChange={(e) => handleInputChange('isPublic', e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`w-6 h-6 rounded-lg border-2 mr-4 flex items-center justify-center transition-all duration-300 ${
+                  formData.isPublic
+                    ? 'border-green-500 bg-green-500'
+                    : 'border-gray-400'
+                }`}>
+                  {formData.isPublic && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <div className="font-medium mb-1">Make this template public</div>
+                  <div className="text-sm text-gray-400">
+                    Allow others in the community to discover and use this template
+                  </div>
+                </div>
+              </label>
+            </div>
 
-          {/* Actions */}
-          <div className="flex gap-4 max-sm:gap-3 max-sm:flex-col pt-4 max-sm:pt-6">
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 max-sm:w-full max-sm:py-3 max-sm:text-lg max-sm:font-semibold"
-            >
-              {isLoading ? 'Saving...' : (template ? 'Update Template' : 'Create Template')}
-            </Button>
-            {onCancel && (
+            {/* Enhanced Action Buttons */}
+            <div className="flex gap-4 max-sm:gap-3 max-sm:flex-col pt-8 border-t border-white/10">
               <Button
-                type="button"
-                onClick={onCancel}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 max-sm:w-full max-sm:py-3 max-sm:text-lg"
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Cancel
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Saving Template...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {template ? 'Update Template' : 'Create Template'}
+                  </div>
+                )}
               </Button>
-            )}
-          </div>
+              
+              {onCancel && (
+                <Button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-lg font-medium transition-all duration-300"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
         </form>
+        </div>
       </div>
     </div>
   );

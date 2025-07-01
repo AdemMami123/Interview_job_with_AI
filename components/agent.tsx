@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -16,7 +16,7 @@ interface savedMessage {
     role:"user" |"system" |"assistant";
     content:string;
 }
-const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,interviewType}:AgentProps) => {
+const Agent = ({userName,userId,type,questions,questionCount,templateId,role,level,techstack,interviewType}:AgentProps) => {
     const router = useRouter();
     const [isSpeaking, setisSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -43,6 +43,11 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
     const [isSavingInterview, setIsSavingInterview] = useState(false);
     const [interviewSaved, setInterviewSaved] = useState(false);
     const [isProcessingAnswer, setIsProcessingAnswer] = useState(false);
+    const [lastProcessedQuestionIndex, setLastProcessedQuestionIndex] = useState(-1);
+    
+    // Use refs for immediate state tracking to avoid React async state issues
+    const currentQuestionIndexRef = useRef(0);
+    const lastProcessedQuestionIndexRef = useRef(-1);
 
     // Initialize voice service and detect mobile
     useEffect(() => {
@@ -72,6 +77,24 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
         }
     }, [questions, type]);
 
+    // Debug effect to track question index changes
+    useEffect(() => {
+        console.log(`🎯 Question index changed to: ${currentQuestionIndex} (Question ${currentQuestionIndex + 1})`);
+        if (interviewQuestions.length > 0 && currentQuestionIndex < interviewQuestions.length) {
+            console.log(`🎯 Current question: "${interviewQuestions[currentQuestionIndex]?.substring(0, 50)}..."`);
+        }
+        console.log(`🎯 State update completed at ${new Date().toLocaleTimeString()}`);
+        // Update ref to match state
+        currentQuestionIndexRef.current = currentQuestionIndex;
+    }, [currentQuestionIndex, interviewQuestions]);
+
+    // Debug effect to track lastProcessedQuestionIndex changes
+    useEffect(() => {
+        console.log(`🔄 LastProcessedQuestionIndex changed to: ${lastProcessedQuestionIndex} at ${new Date().toLocaleTimeString()}`);
+        // Update ref to match state
+        lastProcessedQuestionIndexRef.current = lastProcessedQuestionIndex;
+    }, [lastProcessedQuestionIndex]);
+
     const generateQuestions = async () => {
         try {
             const response = await fetch('/api/vapi/generate', {
@@ -96,7 +119,7 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
         }
     };
 
-    const speak = async (text: string) => {
+    const speak = async (text: string, expectedQuestionIndex?: number) => {
         if (!voiceService) {
             console.error('No voice service available for speaking');
             return;
@@ -117,12 +140,48 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             // For template interviews, auto-start listening after AI responses
             if (type === 'template') {
                 // Always auto-start listening after any response in template interviews now that they're interactive
+                console.log('🎤 Template interview: Scheduling voice restart after AI response');
                 if (callStatus === CallStatus.ACTIVE && !voiceDisabled) {
                     setTimeout(() => {
-                        if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) {
-                            startListening();
+                        console.log('🎤 Template interview: Checking if we can restart voice recognition');
+                        console.log('🎤 Call status:', callStatus);
+                        console.log('🎤 Is listening:', isListening);
+                        console.log('🎤 Is speaking:', isSpeaking);
+                        console.log('🎤 Is thinking:', isThinking);
+                        console.log('🎤 Voice disabled:', voiceDisabled);
+                        console.log('🎤 Current question index:', currentQuestionIndex);
+                        console.log('🎤 Last processed question index:', lastProcessedQuestionIndex);
+                        console.log('🎤 Current question index (ref):', currentQuestionIndexRef.current);
+                        console.log('🎤 Last processed question index (ref):', lastProcessedQuestionIndexRef.current);
+                        console.log('🎤 Expected question index:', expectedQuestionIndex);
+                        console.log('🎤 Interview questions length:', interviewQuestions.length);
+                        
+                        // If we have an expected question index, use it for verification
+                        if (expectedQuestionIndex !== undefined) {
+                            console.log(`🎤 Expected question index: ${expectedQuestionIndex}, Current (ref): ${currentQuestionIndexRef.current}`);
+                            if (currentQuestionIndexRef.current !== expectedQuestionIndex) {
+                                console.log(`⚠️ State mismatch detected! Expected: ${expectedQuestionIndex}, Current (ref): ${currentQuestionIndexRef.current}`);
+                                console.log(`⚠️ This suggests React state hasn't updated yet. Voice restart may be premature.`);
+                                // Don't restart voice recognition if state hasn't caught up
+                                console.log('❌ Skipping voice restart due to state mismatch');
+                                return;
+                            } else {
+                                console.log(`✅ State verification passed! Current ref matches expected: ${expectedQuestionIndex}`);
+                            }
                         }
-                    }, 2000);
+                        
+                        if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking && !voiceDisabled) {
+                            console.log('✅ Template interview: All conditions met, restarting voice recognition');
+                            startListening();
+                        } else {
+                            console.log('❌ Template interview: Cannot restart voice recognition due to current state');
+                            if (callStatus !== CallStatus.ACTIVE) console.log('  - Call status not active');
+                            if (isListening) console.log('  - Already listening');
+                            if (isSpeaking) console.log('  - Currently speaking');
+                            if (isThinking) console.log('  - Currently thinking');
+                            if (voiceDisabled) console.log('  - Voice disabled');
+                        }
+                    }, 4000); // Increased delay to 4 seconds to ensure state updates complete
                 }
                 return;
             }
@@ -148,6 +207,14 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
         if (!voiceService || callStatus !== CallStatus.ACTIVE || isListening) {
             return;
         }
+        
+        // Prevent rapid-fire listening attempts
+        const now = Date.now();
+        if (now - (startListening as any).lastCall < 3000) {
+            console.log('🔄 Preventing rapid listening restart');
+            return;
+        }
+        (startListening as any).lastCall = now;
         
         setIsListening(true);
         setIsThinking(false);
@@ -176,7 +243,8 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             });
             
             // Process the transcript if we got meaningful input
-            if (transcript.trim().length > 3) { // Increased minimum length from 1 to 3
+            if (transcript.trim().length > 2) { // Reduced from 3 to 2 for better sensitivity
+                console.log(`🎯 Voice transcript received: "${transcript}"`);
                 setIsListening(false);
                 setIsThinking(true); // Show thinking while processing
                 setCurrentTranscript('');
@@ -184,22 +252,24 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 setSpeechDetected(false);
                 setMessages(prev => [...prev, { role: 'user', content: transcript }]);
                 await handleUserAnswer(transcript);
-            } else {
+            } else if (transcript.trim().length > 0) {
+                // Very short transcript - likely noise or incomplete speech
+                console.log(`🔄 Short transcript received ("${transcript}"), NOT auto-retrying for template interview to avoid loops`);
                 setIsListening(false);
                 setCurrentTranscript('');
                 setAudioDetected(false);
                 setSpeechDetected(false);
                 
-                // If we get a very short transcript, wait a moment and try listening again
-                // This helps with cases where the voice service picks up brief noise
-                // But only for conversational interviews, not templates
-                if (callStatus === CallStatus.ACTIVE && !voiceDisabled && type !== 'template') {
-                    setTimeout(() => {
-                        if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) {
-                            startListening();
-                        }
-                    }, 2000);
-                }
+                // Don't auto-retry for template interviews with short transcripts to avoid interference
+                // The speak() function will handle restarting voice recognition after AI response
+            } else {
+                console.log('❌ Empty transcript received');
+                setIsListening(false);
+                setCurrentTranscript('');
+                setAudioDetected(false);
+                setSpeechDetected(false);
+                
+                // Don't auto-retry for template interviews - let the speak() function handle it
             }
         } catch (error) {
             console.error('Error listening:', error);
@@ -238,49 +308,132 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 return;
             }
             
-            // Show user-friendly error messages
+            // Show user-friendly error messages and auto-retry for template interviews
             if (error instanceof Error) {
                 if (error.message.includes('not-allowed') || error.message.includes('denied')) {
                     setSpeechError('Microphone access denied. Please allow microphone permissions or use text input.');
                     return;
                 } else if (error.message.includes('network') || error.message.includes('service-not-allowed')) {
                     setSpeechError('Speech service issue. Please try again or use text input.');
+                    
+                    // Auto-retry for template interviews with network issues
+                    if (type === 'template' && networkStatus.issueCount < 2) {
+                        setTimeout(() => {
+                            if (callStatus === CallStatus.ACTIVE && !isListening && !isSpeaking && !isThinking) {
+                                console.log('🔄 Auto-retrying voice recognition for template interview');
+                                setSpeechError(null);
+                                startListening();
+                            }
+                        }, 2000);
+                    }
                     return;
                 } else if (error.message.includes('timeout') || error.message.includes('No speech')) {
-                    setSpeechError('No speech detected. Try the Test Voice button first, then speak closer to your microphone.');
+                    setSpeechError('No speech detected. Try speaking closer to your microphone.');
+                    
+                    // Don't auto-retry for template interviews with timeout - let speak() function handle restarts
+                    console.log('🔄 Template interview timeout - will restart via speak() function after AI response');
                     return;
                 } else if (error.message.includes('unavailable')) {
                     setSpeechError('Speech service is currently unavailable. Please use text input.');
                     return;
                 } else {
                     setSpeechError('Speech recognition failed. Please try again or use text input.');
+                    
+                    // Don't auto-retry for template interviews with generic errors - let speak() function handle restarts
+                    console.log('🔄 Template interview error - will restart via speak() function after AI response');
                 }
             }
         }
     };
 
     const handleUserAnswer = async (answer: string) => {
+        console.log(`📥 handleUserAnswer called with: "${answer.substring(0, 50)}..."`);
+        console.log(`📥 Current state - Question index: ${currentQuestionIndex}, Last processed: ${lastProcessedQuestionIndex}, Processing: ${isProcessingAnswer}`);
+        console.log(`📥 Current refs - Question index: ${currentQuestionIndexRef.current}, Last processed: ${lastProcessedQuestionIndexRef.current}`);
+        
         // Prevent multiple simultaneous processing
         if (isProcessingAnswer) {
+            console.log('🔄 Already processing an answer, skipping duplicate');
+            return;
+        }
+        
+        // For template interviews, extra validation to prevent processing old questions
+        if (type === 'template') {
+            // Use refs for immediate state checking (not async React state)
+            const currentIdx = currentQuestionIndexRef.current;
+            const lastProcessedIdx = lastProcessedQuestionIndexRef.current;
+            
+            // Check if this might be a delayed response to a previous question
+            if (currentIdx > 0 && currentIdx === lastProcessedIdx) {
+                console.log(`🔄 Detected potential stale voice input: current question ${currentIdx + 1} already processed (using refs)`);
+                console.log(`🔄 This often happens when voice recognition captures delayed audio. Ignoring.`);
+                return;
+            }
+            
+            // Additional safety check
+            if (currentIdx > 0 && lastProcessedIdx === currentIdx - 1) {
+                console.log(`✅ This appears to be a valid answer for current question ${currentIdx + 1} (using refs)`);
+            } else if (currentIdx === 0 && lastProcessedIdx === -1) {
+                console.log(`✅ This appears to be the first question, proceeding (using refs)`);
+            } else {
+                console.log(`⚠️ Unexpected ref state: currentQuestionIndex=${currentIdx}, lastProcessedQuestionIndex=${lastProcessedIdx}`);
+                console.log(`⚠️ This might indicate a timing issue or stale voice input`);
+            }
+        }
+        
+        // Check for duplicate answers to prevent voice recognition issues
+        // Look at the last 3 user messages to catch rapid duplicates
+        const recentUserMessages = messages.filter(m => m.role === 'user').slice(-3);
+        const isDuplicate = recentUserMessages.some(msg => 
+            msg.content.trim().toLowerCase() === answer.trim().toLowerCase()
+        );
+        
+        if (isDuplicate) {
+            console.log('🔄 Duplicate answer detected in recent messages, skipping');
             return;
         }
         
         try {
             setIsProcessingAnswer(true);
+            setIsThinking(true);
+            
+            console.log(`📝 Processing answer: "${answer.substring(0, 50)}..."`);
             
             // Additional validation: Don't process very short answers (likely voice recognition errors)
             if (answer.trim().length < 3) {
+                console.log('❌ Answer too short, skipping');
                 setIsThinking(false);
                 return;
             }
             
             // Template-based interview logic with conversational AI
             if (type === 'template' && interviewQuestions.length > 0) {
+                console.log(`🎯 Processing template answer for question ${currentQuestionIndex + 1} of ${questionCount || interviewQuestions.length}`);
+                console.log(`🎯 Last processed question index: ${lastProcessedQuestionIndex}`);
+                console.log(`🎯 Current question index: ${currentQuestionIndex}`);
+                console.log(`🎯 Question count limit: ${questionCount || interviewQuestions.length}`);
+                
+                // Prevent processing the same question index multiple times
+                if (currentQuestionIndexRef.current === lastProcessedQuestionIndexRef.current) {
+                    console.log(`🔄 Question ${currentQuestionIndexRef.current + 1} already processed (using refs for immediate check), skipping`);
+                    console.log(`🔄 This means we've already processed this question index, voice recognition might have picked up duplicate`);
+                    setIsThinking(false);
+                    setIsProcessingAnswer(false);
+                    return;
+                }
+                
+                // Mark this question as being processed (update both state and ref immediately)
+                setLastProcessedQuestionIndex(currentQuestionIndexRef.current);
+                lastProcessedQuestionIndexRef.current = currentQuestionIndexRef.current;
+                console.log(`✅ Marked question ${currentQuestionIndexRef.current + 1} as being processed (both state and ref)`);
+                
                 // Increment conversation count for template interviews too
                 setConversationCount(prev => prev + 1);
                 
-                // Check if this was the last question
-                if (currentQuestionIndex >= interviewQuestions.length - 1) {
+                // Check if this was the last question based on questionCount
+                const maxQuestions = questionCount || interviewQuestions.length;
+                if (currentQuestionIndexRef.current >= maxQuestions - 1) {
+                    console.log(`🏁 Processing final question response (${currentQuestionIndexRef.current + 1}/${maxQuestions})`);
                     // All template questions completed - get AI's final response
                     const response = await fetch('/api/interview/chat', {
                         method: 'POST',
@@ -296,7 +449,13 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                                 isTemplateInterview: true,
                                 templateQuestions: interviewQuestions,
                                 currentQuestionIndex: currentQuestionIndex,
-                                isLastQuestion: true
+                                isLastQuestion: true,
+                                templateData: {
+                                    name: templateId,
+                                    role: role,
+                                    level: level,
+                                    techStack: techstack
+                                }
                             }
                         })
                     });
@@ -320,7 +479,15 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                     return;
                 }
                 
+                // Calculate the next question index
+                const nextQuestionIndex = currentQuestionIndexRef.current + 1;
+                const nextQuestion = interviewQuestions[nextQuestionIndex];
+                
+                console.log(`🔄 Moving from question ${currentQuestionIndexRef.current + 1} to question ${nextQuestionIndex + 1}`);
+                console.log(`🔄 Next question: "${nextQuestion}"`);
+                
                 // Get AI response to current answer and transition to next question
+                console.log(`🤖 Requesting AI response for question ${currentQuestionIndexRef.current + 1} with next question: "${nextQuestion}"`);
                 const response = await fetch('/api/interview/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -334,8 +501,14 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                             conversationCount: conversationCount + 1,
                             isTemplateInterview: true,
                             templateQuestions: interviewQuestions,
-                            currentQuestionIndex: currentQuestionIndex,
-                            nextQuestion: interviewQuestions[currentQuestionIndex + 1]
+                            currentQuestionIndex: currentQuestionIndexRef.current,
+                            nextQuestion: nextQuestion,
+                            templateData: {
+                                name: templateId,
+                                role: role,
+                                level: level,
+                                techStack: techstack
+                            }
                         }
                     })
                 });
@@ -344,18 +517,32 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 if (response.ok) {
                     const data = await response.json();
                     aiResponse = data.response || '';
+                    console.log('🤖 AI Response received:', aiResponse.substring(0, 200) + '...');
+                    console.log(`🤖 AI Response includes next question: ${aiResponse.includes(nextQuestion) ? 'YES' : 'NO'}`);
+                } else {
+                    console.error('🤖 AI Response failed with status:', response.status);
                 }
                 
-                // Move to next question
-                const nextQuestionIndex = currentQuestionIndex + 1;
-                setCurrentQuestionIndex(nextQuestionIndex);
+                // CRITICAL: Update states BEFORE speaking to ensure they're ready when voice restarts
+                console.log(`✅ About to move from question ${currentQuestionIndexRef.current + 1} to question ${nextQuestionIndex + 1}`);
+                console.log(`✅ Before update - currentQuestionIndex: ${currentQuestionIndexRef.current}`);
                 
-                // If AI gave a response, speak it, otherwise use fallback
+                // Update both states and refs immediately BEFORE speaking
+                const previousQuestionIndex = currentQuestionIndexRef.current;
+                setCurrentQuestionIndex(nextQuestionIndex);
+                currentQuestionIndexRef.current = nextQuestionIndex;
+                setLastProcessedQuestionIndex(previousQuestionIndex);
+                lastProcessedQuestionIndexRef.current = previousQuestionIndex;
+                
+                console.log(`✅ Updated states and refs BEFORE speaking: currentQuestionIndex -> ${nextQuestionIndex}, lastProcessedQuestionIndex -> ${previousQuestionIndex}`);
+                console.log(`✅ Question ${nextQuestionIndex + 1} is now the active question`);
+                
+                // Speak the AI response AFTER state updates
                 if (aiResponse.trim()) {
-                    await speak(aiResponse);
+                    console.log(`🗣️ Speaking AI response for transition to question ${nextQuestionIndex + 1}`);
+                    await speak(aiResponse, nextQuestionIndex); // Pass the expected next question index
                 } else {
                     // Fallback conversational transition to next question
-                    const nextQuestion = interviewQuestions[nextQuestionIndex];
                     const transitionResponses = [
                         `That's a great answer! I can see you have good experience there. Let me ask you about something else: ${nextQuestion}`,
                         `Interesting perspective! Thanks for sharing that. Now I'd like to know: ${nextQuestion}`,
@@ -364,7 +551,9 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                     ];
                     
                     const randomTransition = transitionResponses[Math.floor(Math.random() * transitionResponses.length)];
-                    await speak(randomTransition);
+                    console.log('🔄 Using fallback transition:', randomTransition.substring(0, 100) + '...');
+                    console.log(`🗣️ Speaking fallback transition for question ${nextQuestionIndex + 1}`);
+                    await speak(randomTransition, nextQuestionIndex); // Pass the expected next question index
                 }
                 
                 return;
@@ -400,10 +589,16 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                     message: answer,
                     conversationHistory: messages,
                     interviewContext: {
-                        role: 'Software Developer',
-                        level: 'Mid-level',
-                        techStack: 'React, Node.js, TypeScript',
-                        conversationCount: conversationCount
+                        role: role || 'Software Developer',
+                        level: level || 'Mid-level',
+                        techStack: techstack?.join(', ') || 'React, Node.js, TypeScript',
+                        conversationCount: conversationCount,
+                        interviewType: interviewType || 'general',
+                        isTemplateInterview: false,
+                        candidateProfile: {
+                            userName: userName,
+                            userId: userId
+                        }
                     }
                 })
             });
@@ -569,6 +764,9 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
 
         setCallStatus(CallStatus.CONNECTING);
         setCurrentQuestionIndex(0);
+        currentQuestionIndexRef.current = 0; // Reset ref as well
+        setLastProcessedQuestionIndex(-1);
+        lastProcessedQuestionIndexRef.current = -1; // Reset ref as well
         setMessages([]);
         setConversationCount(0);
         setInterviewSaved(false);
@@ -582,7 +780,8 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
             // Different greeting based on interview type
             if (type === 'template' && interviewQuestions.length > 0) {
                 // Template-based interview: Start with conversational introduction and first question
-                const templateGreeting = `Hello ${userName}! It's great to meet you today. Thank you for taking the time to interview with us. I'm really excited to learn more about you and your experience. We'll be going through ${interviewQuestions.length} questions together, and I encourage you to share as much detail as you'd like - this is your chance to really showcase your skills and experience. Are you ready to get started? Great! Let's begin with: ${interviewQuestions[0]}`;
+                const maxQuestions = questionCount || interviewQuestions.length;
+                const templateGreeting = `Hello ${userName}! It's great to meet you today. Thank you for taking the time to interview with us. I'm really excited to learn more about you and your experience. We'll be going through ${maxQuestions} questions together, and I encourage you to share as much detail as you'd like - this is your chance to really showcase your skills and experience. Are you ready to get started? Great! Let's begin with: ${interviewQuestions[0]}`;
                 
                 await speak(templateGreeting);
             } else {
@@ -671,13 +870,13 @@ const Agent = ({userName,userId,type,questions,templateId,role,level,techstack,i
                 <div className='flex justify-between items-center mb-2 max-sm:mb-3'>
                     <span className='text-sm max-sm:text-base text-gray-300'>Question Progress</span>
                     <span className='text-sm max-sm:text-base text-blue-400 font-medium max-sm:font-semibold'>
-                        {currentQuestionIndex + 1} of {interviewQuestions.length}
+                        {currentQuestionIndex + 1} of {questionCount || interviewQuestions.length}
                     </span>
                 </div>
                 <div className='w-full bg-gray-700 rounded-full h-2 max-sm:h-3'>
                     <div 
                         className='bg-blue-500 h-2 max-sm:h-3 rounded-full transition-all duration-500'
-                        style={{ width: `${((currentQuestionIndex + 1) / interviewQuestions.length) * 100}%` }}
+                        style={{ width: `${((currentQuestionIndex + 1) / (questionCount || interviewQuestions.length)) * 100}%` }}
                     ></div>
                 </div>
             </div>

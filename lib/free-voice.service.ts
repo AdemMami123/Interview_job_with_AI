@@ -23,8 +23,8 @@ export class FreeVoiceService {
                 // Mobile-specific configuration
                 if (this.isMobile) {
                     this.recognition.continuous = false; // Better for mobile
-                    this.recognition.interimResults = false; // More reliable on mobile
-                    console.log('📱 Mobile speech recognition configured: continuous=false, interimResults=false');
+                    this.recognition.interimResults = true; // Enable interim results for better UX
+                    console.log('📱 Mobile speech recognition configured: continuous=false, interimResults=true');
                 } else {
                     this.recognition.continuous = true;
                     this.recognition.interimResults = true;
@@ -142,6 +142,13 @@ export class FreeVoiceService {
 
             this.recognition.onresult = (event: any) => {
                 console.log('🎤 OnResult triggered with', event.results.length, 'results');
+                console.log('🎤 Has result flag:', hasResult);
+                
+                // Prevent multiple processing of the same result
+                if (hasResult) {
+                    console.log('🔄 Result already processed, ignoring additional onresult');
+                    return;
+                }
                 
                 let interimTranscript = '';
                 let latestInterimText = '';
@@ -153,45 +160,56 @@ export class FreeVoiceService {
                         console.log('🎤 Final transcript part:', transcript);
                         console.log('🎤 Complete final transcript so far:', finalTranscript);
                         callbacks?.onTranscript?.(finalTranscript, true);
+                        
+                        // Use final result immediately - don't wait for silence
+                        if (finalTranscript.trim().length > 0 && !hasResult) {
+                            hasResult = true;
+                            clearTimeout(timeoutId);
+                            clearTimeout(silenceTimer);
+                            this.isListening = false;
+                            this.networkIssueCount = 0;
+                            this.recognition.stop();
+                            console.log('🎤 Using final transcript immediately:', finalTranscript.trim());
+                            resolve(finalTranscript.trim());
+                            return;
+                        }
                     } else {
                         interimTranscript += transcript;
-                        latestInterimText = transcript; // Keep track of the latest interim result
+                        latestInterimText = transcript;
                         console.log('🎤 Interim transcript:', interimTranscript);
                         callbacks?.onTranscript?.(finalTranscript + interimTranscript, false);
                     }
                 }
                 
-                // If we have any final transcript, use it
-                if (finalTranscript.trim().length > 0 && !hasResult) {
+                // For mobile devices or when we have substantial interim results, use them more quickly
+                if (this.isMobile && interimTranscript.trim().length > 10 && !hasResult) {
+                    console.log('📱 Mobile: Using interim result due to substantial content');
                     hasResult = true;
                     clearTimeout(timeoutId);
                     clearTimeout(silenceTimer);
                     this.isListening = false;
                     this.networkIssueCount = 0;
                     this.recognition.stop();
-                    console.log('🎤 Using final transcript:', finalTranscript.trim());
-                    resolve(finalTranscript.trim());
+                    resolve((finalTranscript + interimTranscript).trim());
                     return;
                 }
                 
-                // If we have interim results, set up silence detection
+                // Set up silence detection for interim results
                 if (interimTranscript.trim().length > 0 || latestInterimText.trim().length > 0) {
                     console.log('🎤 Detected speech, resetting silence timer...');
                     clearTimeout(silenceTimer);
                     
-                    // Dynamic silence timeout based on speech length
+                    // Shorter silence timeout for better responsiveness
                     const totalSpeech = (finalTranscript + interimTranscript).trim();
                     const speechLength = totalSpeech.length;
-                    let silenceTimeout = 2500; // Base 2.5 seconds
+                    let silenceTimeout = 1500; // Reduced base timeout to 1.5 seconds
                     
-                    // Add more time for longer responses
-                    if (speechLength > 50) silenceTimeout = 3500; // 3.5 seconds for medium responses
-                    if (speechLength > 100) silenceTimeout = 4500; // 4.5 seconds for long responses
-                    if (speechLength > 200) silenceTimeout = 5500; // 5.5 seconds for very long responses
+                    // Add time for longer responses but keep it reasonable
+                    if (speechLength > 50) silenceTimeout = 2000; // 2 seconds for medium responses
+                    if (speechLength > 100) silenceTimeout = 2500; // 2.5 seconds for long responses
                     
                     console.log(`🎤 Setting silence timeout to ${silenceTimeout}ms for speech length: ${speechLength}`);
                     
-                    // Wait for silence after detecting speech (longer pause for longer responses)
                     silenceTimer = setTimeout(() => {
                         const result = (finalTranscript + interimTranscript).trim();
                         if (!hasResult && result.length > 0) {
@@ -255,23 +273,24 @@ export class FreeVoiceService {
 
             this.recognition.onend = () => {
                 console.log('🎤 Speech recognition ended');
+                console.log('🎤 Final transcript at end:', finalTranscript);
+                console.log('🎤 Has result flag:', hasResult);
                 clearTimeout(timeoutId);
                 clearTimeout(silenceTimer);
                 
-                // Only reject if we haven't already resolved and we don't have any transcript
-                if (this.isListening && !hasResult) {
-                    this.isListening = false;
-                    
-                    // If we have any collected transcript, use it
+                // Always set listening to false
+                this.isListening = false;
+                
+                // If we haven't resolved yet and have any transcript, use it
+                if (!hasResult) {
                     if (finalTranscript.trim().length > 0) {
-                        console.log('🎤 Using final transcript on end:', finalTranscript);
+                        hasResult = true;
+                        console.log('🎤 Using final transcript on end:', finalTranscript.trim());
                         resolve(finalTranscript.trim());
                     } else {
                         console.log('🎤 No speech detected during session');
                         reject(new Error('No speech detected. Please speak closer to your microphone.'));
                     }
-                } else {
-                    this.isListening = false;
                 }
             };
 

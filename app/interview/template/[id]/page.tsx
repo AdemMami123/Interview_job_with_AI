@@ -332,6 +332,7 @@ const TemplateInterviewPage = () => {
           type="template"
           templateId={templateId}
           questions={template.questions}
+          questionCount={template.questionCount}
           role={template.role}
           level={template.level}
           techstack={template.techstack}
